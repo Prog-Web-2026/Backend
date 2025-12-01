@@ -1,0 +1,29 @@
+services:
+  api:
+    build: .
+    container_name: node_api
+    ports:
+      - "3000:3000"
+    env_file: .env
+    depends_on:
+      - mysql
+    volumes:
+      - /usr/src/app/node_modules
+
+  mysql:
+    image: mysql:8.0
+    container_name: mysql_db
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: ${DB_NAME}
+      MYSQL_USER: ${DB_USER}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql # volume usado pelo MySQL
+
+# Aqui você **define o volume**
+volumes:
+  mysql_data:
