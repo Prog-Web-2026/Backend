@@ -1,12 +1,12 @@
 import { Request, Response } from "express";
-import { PagamentoRepository } from "../repository/PagamentoRepository";
+import { PagamentoService } from "../services/PagamentoService";
 
-const pagamentoRepo = new PagamentoRepository();
+const pagamentoService = new PagamentoService();
 
 export class PagamentoController {
   async create(req: Request, res: Response) {
     try {
-      const pagamento = await pagamentoRepo.createPagamento(req.body);
+      const pagamento = await pagamentoService.create(req.body);
       res.status(201).json(pagamento);
     } catch (error: any) {
       res
@@ -17,7 +17,7 @@ export class PagamentoController {
 
   async getAll(req: Request, res: Response) {
     try {
-      const pagamentos = await pagamentoRepo.getAllPagamentos();
+      const pagamentos = await pagamentoService.getAll();
       res.json(pagamentos);
     } catch (error: any) {
       res
@@ -28,9 +28,7 @@ export class PagamentoController {
 
   async getById(req: Request, res: Response) {
     try {
-      const pagamento = await pagamentoRepo.getPagamentoById(
-        Number(req.params.id)
-      );
+      const pagamento = await pagamentoService.getById(Number(req.params.id));
       if (!pagamento)
         return res.status(404).json({ message: "Pagamento não encontrado" });
       res.json(pagamento);
@@ -43,7 +41,7 @@ export class PagamentoController {
 
   async update(req: Request, res: Response) {
     try {
-      const pagamento = await pagamentoRepo.updatePagamento(
+      const pagamento = await pagamentoService.update(
         Number(req.params.id),
         req.body
       );
@@ -59,9 +57,7 @@ export class PagamentoController {
 
   async delete(req: Request, res: Response) {
     try {
-      const pagamento = await pagamentoRepo.deletePagamento(
-        Number(req.params.id)
-      );
+      const pagamento = await pagamentoService.delete(Number(req.params.id));
       if (!pagamento)
         return res.status(404).json({ message: "Pagamento não encontrado" });
       res.json({ message: "Pagamento deletado com sucesso" });

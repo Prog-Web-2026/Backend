@@ -1,12 +1,12 @@
 import { Request, Response } from "express";
-import { CarrinhoRepository } from "../repository/CarrinhoRepository";
+import { CarrinhoService } from "../services/CarrinhoService";
 
-const carrinhoRepo = new CarrinhoRepository();
+const carrinhoService = new CarrinhoService();
 
 export class CarrinhoController {
   async create(req: Request, res: Response) {
     try {
-      const carrinho = await carrinhoRepo.createCarrinho(req.body);
+      const carrinho = await carrinhoService.create(req.body);
       res.status(201).json(carrinho);
     } catch (error: any) {
       res
@@ -17,7 +17,7 @@ export class CarrinhoController {
 
   async getAll(req: Request, res: Response) {
     try {
-      const carrinhos = await carrinhoRepo.getAllCarrinhos();
+      const carrinhos = await carrinhoService.getAll();
       res.json(carrinhos);
     } catch (error: any) {
       res
@@ -28,9 +28,7 @@ export class CarrinhoController {
 
   async getById(req: Request, res: Response) {
     try {
-      const carrinho = await carrinhoRepo.getCarrinhoById(
-        Number(req.params.id)
-      );
+      const carrinho = await carrinhoService.getById(Number(req.params.id));
       if (!carrinho)
         return res.status(404).json({ message: "Carrinho não encontrado" });
       res.json(carrinho);
@@ -43,7 +41,7 @@ export class CarrinhoController {
 
   async update(req: Request, res: Response) {
     try {
-      const carrinho = await carrinhoRepo.updateCarrinho(
+      const carrinho = await carrinhoService.update(
         Number(req.params.id),
         req.body
       );
@@ -59,7 +57,7 @@ export class CarrinhoController {
 
   async delete(req: Request, res: Response) {
     try {
-      const carrinho = await carrinhoRepo.deleteCarrinho(Number(req.params.id));
+      const carrinho = await carrinhoService.delete(Number(req.params.id));
       if (!carrinho)
         return res.status(404).json({ message: "Carrinho não encontrado" });
       res.json({ message: "Carrinho deletado com sucesso" });

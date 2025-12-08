@@ -1,12 +1,12 @@
 import { Request, Response } from "express";
-import { ProdutoRepository } from "../repository/ProdutoRepository";
+import { ProdutoService } from "../services/ProdutoService";
 
-const produtoRepo = new ProdutoRepository();
+const produtoService = new ProdutoService();
 
 export class ProdutoController {
   async create(req: Request, res: Response) {
     try {
-      const produto = await produtoRepo.createProduto(req.body);
+      const produto = await produtoService.create(req.body);
       res.status(201).json(produto);
     } catch (error: any) {
       res
@@ -17,7 +17,7 @@ export class ProdutoController {
 
   async getAll(req: Request, res: Response) {
     try {
-      const produtos = await produtoRepo.getAllProdutos();
+      const produtos = await produtoService.getAll();
       res.json(produtos);
     } catch (error: any) {
       res
@@ -28,7 +28,7 @@ export class ProdutoController {
 
   async getById(req: Request, res: Response) {
     try {
-      const produto = await produtoRepo.getProdutoById(Number(req.params.id));
+      const produto = await produtoService.getById(Number(req.params.id));
       if (!produto)
         return res.status(404).json({ message: "Produto não encontrado" });
       res.json(produto);
@@ -41,7 +41,7 @@ export class ProdutoController {
 
   async update(req: Request, res: Response) {
     try {
-      const produto = await produtoRepo.updateProduto(
+      const produto = await produtoService.update(
         Number(req.params.id),
         req.body
       );
@@ -57,7 +57,7 @@ export class ProdutoController {
 
   async delete(req: Request, res: Response) {
     try {
-      const produto = await produtoRepo.deleteProduto(Number(req.params.id));
+      const produto = await produtoService.delete(Number(req.params.id));
       if (!produto)
         return res.status(404).json({ message: "Produto não encontrado" });
       res.json({ message: "Produto deletado com sucesso" });
