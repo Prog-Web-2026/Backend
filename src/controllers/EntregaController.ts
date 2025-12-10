@@ -1,12 +1,12 @@
 import { Request, Response } from "express";
-import { EntregaRepository } from "../repository/EntregaRepository";
+import { EntregaService } from "../services/EntregaService";
 
-const entregaRepo = new EntregaRepository();
+const entregaService = new EntregaService();
 
 export class EntregaController {
   async create(req: Request, res: Response) {
     try {
-      const entrega = await entregaRepo.createEntrega(req.body);
+      const entrega = await entregaService.create(req.body);
       res.status(201).json(entrega);
     } catch (error: any) {
       res
@@ -17,7 +17,7 @@ export class EntregaController {
 
   async getAll(req: Request, res: Response) {
     try {
-      const entregas = await entregaRepo.getAllEntregas();
+      const entregas = await entregaService.getAll();
       res.json(entregas);
     } catch (error: any) {
       res
@@ -28,7 +28,7 @@ export class EntregaController {
 
   async getById(req: Request, res: Response) {
     try {
-      const entrega = await entregaRepo.getEntregaById(Number(req.params.id));
+      const entrega = await entregaService.getById(Number(req.params.id));
       if (!entrega)
         return res.status(404).json({ message: "Entrega não encontrada" });
       res.json(entrega);
@@ -41,7 +41,7 @@ export class EntregaController {
 
   async update(req: Request, res: Response) {
     try {
-      const entrega = await entregaRepo.updateEntrega(
+      const entrega = await entregaService.update(
         Number(req.params.id),
         req.body
       );
@@ -57,7 +57,7 @@ export class EntregaController {
 
   async delete(req: Request, res: Response) {
     try {
-      const entrega = await entregaRepo.deleteEntrega(Number(req.params.id));
+      const entrega = await entregaService.delete(Number(req.params.id));
       if (!entrega)
         return res.status(404).json({ message: "Entrega não encontrada" });
       res.json({ message: "Entrega deletada com sucesso" });

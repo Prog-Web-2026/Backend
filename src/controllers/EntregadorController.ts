@@ -1,12 +1,12 @@
 import { Request, Response } from "express";
-import { EntregadorRepository } from "../repository/EntregadorRepository";
+import { EntregadorService } from "../services/EntregadorService";
 
-const entregadorRepo = new EntregadorRepository();
+const entregadorService = new EntregadorService();
 
 export class EntregadorController {
   async create(req: Request, res: Response) {
     try {
-      const entregador = await entregadorRepo.createEntregador(req.body);
+      const entregador = await entregadorService.create(req.body);
       res.status(201).json(entregador);
     } catch (error: any) {
       res
@@ -17,7 +17,7 @@ export class EntregadorController {
 
   async getAll(req: Request, res: Response) {
     try {
-      const entregadores = await entregadorRepo.getAllEntregadores();
+      const entregadores = await entregadorService.getAll();
       res.json(entregadores);
     } catch (error: any) {
       res
@@ -28,9 +28,7 @@ export class EntregadorController {
 
   async getById(req: Request, res: Response) {
     try {
-      const entregador = await entregadorRepo.getEntregadorById(
-        Number(req.params.id)
-      );
+      const entregador = await entregadorService.getById(Number(req.params.id));
       if (!entregador)
         return res.status(404).json({ message: "Entregador não encontrado" });
       res.json(entregador);
@@ -43,7 +41,7 @@ export class EntregadorController {
 
   async update(req: Request, res: Response) {
     try {
-      const entregador = await entregadorRepo.updateEntregador(
+      const entregador = await entregadorService.update(
         Number(req.params.id),
         req.body
       );
@@ -60,9 +58,7 @@ export class EntregadorController {
 
   async delete(req: Request, res: Response) {
     try {
-      const entregador = await entregadorRepo.deleteEntregador(
-        Number(req.params.id)
-      );
+      const entregador = await entregadorService.delete(Number(req.params.id));
       if (!entregador)
         return res.status(404).json({ message: "Entregador não encontrado" });
       res.json({ message: "Entregador deletado com sucesso" });

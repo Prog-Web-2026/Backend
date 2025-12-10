@@ -6,24 +6,30 @@ services:
       - "3000:3000"
     env_file: .env
     depends_on:
-      - mysql
+      postgres:
+        condition: service_healthy
+    restart: always
     volumes:
       - /usr/src/app/node_modules
 
-  mysql:
-    image: mysql:8.0
-    container_name: mysql_db
+  postgres:
+    image: postgres:16
+    container_name: postgres_db
     restart: always
     environment:
-      MYSQL_ROOT_PASSWORD: root
-      MYSQL_DATABASE: ${DB_NAME}
-      MYSQL_USER: ${DB_USER}
-      MYSQL_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASS}
     ports:
-      - "3306:3306"
+      - "${DB_PORT}:${DB_PORT}"
+    healthcheck:
+      test:
+        ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME} -p ${DB_PORT}"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
     volumes:
-      - mysql_data:/var/lib/mysql # volume usado pelo MySQL
+      - postgres_data:/var/lib/postgresql/data
 
-# Aqui você **define o volume**
 volumes:
-  mysql_data:
+  postgres_data:

@@ -1,12 +1,12 @@
 import { Request, Response } from "express";
-import { EnderecoRepository } from "../repository/EnderecoRepository";
+import { EnderecoService } from "../services/EnderecoService";
 
-const enderecoRepo = new EnderecoRepository();
+const enderecoService = new EnderecoService();
 
 export class EnderecoController {
   async create(req: Request, res: Response) {
     try {
-      const endereco = await enderecoRepo.createEndereco(req.body);
+      const endereco = await enderecoService.create(req.body);
       res.status(201).json(endereco);
     } catch (error: any) {
       res
@@ -17,7 +17,7 @@ export class EnderecoController {
 
   async getAll(req: Request, res: Response) {
     try {
-      const enderecos = await enderecoRepo.getAllEnderecos();
+      const enderecos = await enderecoService.getAll();
       res.json(enderecos);
     } catch (error: any) {
       res
@@ -28,9 +28,7 @@ export class EnderecoController {
 
   async getById(req: Request, res: Response) {
     try {
-      const endereco = await enderecoRepo.getEnderecoById(
-        Number(req.params.id)
-      );
+      const endereco = await enderecoService.getById(Number(req.params.id));
       if (!endereco)
         return res.status(404).json({ message: "Endereço não encontrado" });
       res.json(endereco);
@@ -43,7 +41,7 @@ export class EnderecoController {
 
   async update(req: Request, res: Response) {
     try {
-      const endereco = await enderecoRepo.updateEndereco(
+      const endereco = await enderecoService.update(
         Number(req.params.id),
         req.body
       );
@@ -59,7 +57,7 @@ export class EnderecoController {
 
   async delete(req: Request, res: Response) {
     try {
-      const endereco = await enderecoRepo.deleteEndereco(Number(req.params.id));
+      const endereco = await enderecoService.delete(Number(req.params.id));
       if (!endereco)
         return res.status(404).json({ message: "Endereço não encontrado" });
       res.json({ message: "Endereço deletado com sucesso" });

@@ -1,12 +1,12 @@
 import { Request, Response } from "express";
-import { PedidoRepository } from "../repository/PedidoRepository";
+import { PedidoService } from "../services/PedidoService";
 
-const pedidoRepo = new PedidoRepository();
+const pedidoService = new PedidoService();
 
 export class PedidoController {
   async create(req: Request, res: Response) {
     try {
-      const pedido = await pedidoRepo.createPedido(req.body);
+      const pedido = await pedidoService.create(req.body);
       res.status(201).json(pedido);
     } catch (error: any) {
       res
@@ -17,7 +17,7 @@ export class PedidoController {
 
   async getAll(req: Request, res: Response) {
     try {
-      const pedidos = await pedidoRepo.getAllPedidos();
+      const pedidos = await pedidoService.getAll();
       res.json(pedidos);
     } catch (error: any) {
       res
@@ -28,7 +28,7 @@ export class PedidoController {
 
   async getById(req: Request, res: Response) {
     try {
-      const pedido = await pedidoRepo.getPedidoById(Number(req.params.id));
+      const pedido = await pedidoService.getById(Number(req.params.id));
       if (!pedido)
         return res.status(404).json({ message: "Pedido não encontrado" });
       res.json(pedido);
@@ -41,7 +41,7 @@ export class PedidoController {
 
   async update(req: Request, res: Response) {
     try {
-      const pedido = await pedidoRepo.updatePedido(
+      const pedido = await pedidoService.update(
         Number(req.params.id),
         req.body
       );
@@ -57,7 +57,7 @@ export class PedidoController {
 
   async delete(req: Request, res: Response) {
     try {
-      const pedido = await pedidoRepo.deletePedido(Number(req.params.id));
+      const pedido = await pedidoService.delete(Number(req.params.id));
       if (!pedido)
         return res.status(404).json({ message: "Pedido não encontrado" });
       res.json({ message: "Pedido deletado com sucesso" });

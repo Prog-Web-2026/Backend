@@ -1,12 +1,12 @@
 import { Request, Response } from "express";
-import { ClienteRepository } from "../repository/ClienteRepository";
+import { ClienteService } from "../services/ClienteService";
 
-const clienteRepo = new ClienteRepository();
+const clienteService = new ClienteService();
 
 export class ClienteController {
   async create(req: Request, res: Response) {
     try {
-      const cliente = await clienteRepo.createCliente(req.body);
+      const cliente = await clienteService.create(req.body);
       res.status(201).json(cliente);
     } catch (error: any) {
       res
@@ -17,7 +17,7 @@ export class ClienteController {
 
   async getAll(req: Request, res: Response) {
     try {
-      const clientes = await clienteRepo.getAllClientes();
+      const clientes = await clienteService.getAll();
       res.json(clientes);
     } catch (error: any) {
       res
@@ -28,7 +28,7 @@ export class ClienteController {
 
   async getById(req: Request, res: Response) {
     try {
-      const cliente = await clienteRepo.getClienteById(Number(req.params.id));
+      const cliente = await clienteService.getById(Number(req.params.id));
       if (!cliente)
         return res.status(404).json({ message: "Cliente não encontrado" });
       res.json(cliente);
@@ -41,7 +41,7 @@ export class ClienteController {
 
   async update(req: Request, res: Response) {
     try {
-      const cliente = await clienteRepo.updateCliente(
+      const cliente = await clienteService.update(
         Number(req.params.id),
         req.body
       );
@@ -57,7 +57,7 @@ export class ClienteController {
 
   async delete(req: Request, res: Response) {
     try {
-      const cliente = await clienteRepo.deleteCliente(Number(req.params.id));
+      const cliente = await clienteService.delete(Number(req.params.id));
       if (!cliente)
         return res.status(404).json({ message: "Cliente não encontrado" });
       res.json({ message: "Cliente deletado com sucesso" });

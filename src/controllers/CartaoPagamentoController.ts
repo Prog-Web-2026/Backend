@@ -1,12 +1,12 @@
 import { Request, Response } from "express";
-import { CartaoPagamentoRepository } from "../repository/CartaoPagamentoRepository";
+import { CartaoPagamentoService } from "../services/CartaoPagamentoService";
 
-const cartaoRepo = new CartaoPagamentoRepository();
+const cartaoService = new CartaoPagamentoService();
 
 export class CartaoPagamentoController {
   async create(req: Request, res: Response) {
     try {
-      const cartao = await cartaoRepo.createCartao(req.body);
+      const cartao = await cartaoService.create(req.body);
       res.status(201).json(cartao);
     } catch (error: any) {
       res
@@ -17,7 +17,7 @@ export class CartaoPagamentoController {
 
   async getAll(req: Request, res: Response) {
     try {
-      const cartoes = await cartaoRepo.getAllCartoes();
+      const cartoes = await cartaoService.getAll();
       res.json(cartoes);
     } catch (error: any) {
       res
@@ -28,7 +28,7 @@ export class CartaoPagamentoController {
 
   async getById(req: Request, res: Response) {
     try {
-      const cartao = await cartaoRepo.getCartaoById(Number(req.params.id));
+      const cartao = await cartaoService.getById(Number(req.params.id));
       if (!cartao)
         return res.status(404).json({ message: "Cartão não encontrado" });
       res.json(cartao);
@@ -41,7 +41,7 @@ export class CartaoPagamentoController {
 
   async update(req: Request, res: Response) {
     try {
-      const cartao = await cartaoRepo.updateCartao(
+      const cartao = await cartaoService.update(
         Number(req.params.id),
         req.body
       );
@@ -57,7 +57,7 @@ export class CartaoPagamentoController {
 
   async delete(req: Request, res: Response) {
     try {
-      const cartao = await cartaoRepo.deleteCartao(Number(req.params.id));
+      const cartao = await cartaoService.delete(Number(req.params.id));
       if (!cartao)
         return res.status(404).json({ message: "Cartão não encontrado" });
       res.json({ message: "Cartão deletado com sucesso" });

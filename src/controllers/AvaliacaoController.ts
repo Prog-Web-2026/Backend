@@ -1,12 +1,12 @@
 import { Request, Response } from "express";
-import { AvaliacaoRepository } from "../repository/AvaliacaoRepository";
+import { AvaliacaoService } from "../services/AvaliacaoService";
 
-const avaliacaoRepo = new AvaliacaoRepository();
+const avaliacaoService = new AvaliacaoService();
 
 export class AvaliacaoController {
   async create(req: Request, res: Response) {
     try {
-      const avaliacao = await avaliacaoRepo.createAvaliacao(req.body);
+      const avaliacao = await avaliacaoService.create(req.body);
       res.status(201).json(avaliacao);
     } catch (error: any) {
       res
@@ -17,7 +17,7 @@ export class AvaliacaoController {
 
   async getAll(req: Request, res: Response) {
     try {
-      const avaliacoes = await avaliacaoRepo.getAllAvaliacoes();
+      const avaliacoes = await avaliacaoService.getAll();
       res.json(avaliacoes);
     } catch (error: any) {
       res
@@ -28,9 +28,7 @@ export class AvaliacaoController {
 
   async getById(req: Request, res: Response) {
     try {
-      const avaliacao = await avaliacaoRepo.getAvaliacaoById(
-        Number(req.params.id)
-      );
+      const avaliacao = await avaliacaoService.getById(Number(req.params.id));
       if (!avaliacao)
         return res.status(404).json({ message: "Avaliação não encontrada" });
       res.json(avaliacao);
@@ -43,7 +41,7 @@ export class AvaliacaoController {
 
   async update(req: Request, res: Response) {
     try {
-      const avaliacao = await avaliacaoRepo.updateAvaliacao(
+      const avaliacao = await avaliacaoService.update(
         Number(req.params.id),
         req.body
       );
@@ -59,9 +57,7 @@ export class AvaliacaoController {
 
   async delete(req: Request, res: Response) {
     try {
-      const avaliacao = await avaliacaoRepo.deleteAvaliacao(
-        Number(req.params.id)
-      );
+      const avaliacao = await avaliacaoService.delete(Number(req.params.id));
       if (!avaliacao)
         return res.status(404).json({ message: "Avaliação não encontrada" });
       res.json({ message: "Avaliação deletada com sucesso" });
