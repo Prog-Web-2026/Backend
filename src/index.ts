@@ -33,7 +33,7 @@ const limiter = rateLimit({
 app.use(limiter);
 
 app.get("/", (_req, res) => {
-  res.send("API rodando! Acesse suas rotas CRUD via endpoints.");
+  res.send("API rodando! Acesse suas rotas CRUD via endpoints. (v2)");
 });
 
 // ROTAS
