@@ -21,16 +21,23 @@ import cartaoPagamentoRoutes from "./routes/CartaoPagamentoRoutes";
 dotenv.config();
 
 const app = express();
-app.use(express.json());
 
 const limiter = rateLimit({
-  windowMs: 60 * 1000, // 1 minuto
-  max: 5,
+  windowMs: 300 * 1000, // 300 segundos para teste rápido
+  max: 3, // Apenas 3 requisições
+  message: "Limite de requisições atingido! Espere 300 segundos.",
   standardHeaders: true,
   legacyHeaders: false,
-  message: "Muitas requisições. Tente novamente em instantes."
 });
+
 app.use(limiter);
+
+// Depois os outros middlewares
+app.use(express.json());
+
+app.get("/test", (_req, res) => {
+  res.send(`TESTE - ${new Date().toLocaleTimeString()}`);
+});
 
 app.get("/", (_req, res) => {
   res.send("API rodando! Acesse suas rotas CRUD via endpoints.");
@@ -51,12 +58,14 @@ app.use("/entregas", entregaRoutes);
 app.use("/avaliacoes", avaliacaoRoutes);
 app.use("/cartoes-pagamento", cartaoPagamentoRoutes);
 
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3001;
 
 sequelize
   .sync({ force: false })
   .then(() => {
     console.log("Banco de dados conectado!");
+    console.log("✅ Rate limit: 3 req / 30 seg");
+    console.log("📡 Teste rápido: curl http://localhost:3001/test");
     app.listen(PORT, () =>
       console.log(`Servidor rodando na porta ${PORT}`)
     );
