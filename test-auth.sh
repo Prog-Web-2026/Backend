@@ -12,7 +12,7 @@ echo -e "${BLUE}=== TESTES DE AUTENTICAÇÃO E VALIDAÇÃO ===${NC}\n"
 
 # 1. Registrar novo usuário
 echo -e "${YELLOW}1. Registrando novo usuário...${NC}"
-REGISTER_RESPONSE=$(curl -s -X POST "$BASE_URL/users/register" \
+REGISTER_RESPONSE=$(curl -s -X POST "$BASE_URL/users" \
   -H "Content-Type: application/json" \
   -d '{
     "name": "João Silva",
@@ -25,7 +25,7 @@ echo ""
 
 # 2. Tentar registrar com dados inválidos
 echo -e "${YELLOW}2. Tentando registrar com email inválido...${NC}"
-INVALID_EMAIL=$(curl -s -X POST "$BASE_URL/users/register" \
+INVALID_EMAIL=$(curl -s -X POST "$BASE_URL/users" \
   -H "Content-Type: application/json" \
   -d '{
     "name": "Maria",
