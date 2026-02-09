@@ -23,12 +23,14 @@ dotenv.config();
 const app = express();
 app.use(express.json());
 
+// Rate limit - desabilitado se NODE_ENV=test
 const limiter = rateLimit({
   windowMs: 60 * 1000, // 1 minuto
-  max: 5,
+  max: process.env.RATE_LIMIT_MAX ? Number(process.env.RATE_LIMIT_MAX) : 5,
   standardHeaders: true,
   legacyHeaders: false,
-  message: "Muitas requisições. Tente novamente em instantes."
+  message: "Muitas requisições. Tente novamente em instantes.",
+  skip: (_req, _res) => process.env.NODE_ENV === "test", // Pular rate limit em modo teste
 });
 app.use(limiter);
 
