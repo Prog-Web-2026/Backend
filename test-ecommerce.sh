@@ -1,8 +1,5 @@
 #!/bin/bash
 
-# test-ecommerce-system-final.sh
-# Script final corrigido para testar todas as rotas
-
 # Configurações
 BASE_URL="http://localhost:3000"
 ADMIN_EMAIL="admin@exemplo.com"
@@ -28,12 +25,10 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
-# Contadores
 TOTAL_TESTS=0
 PASSED_TESTS=0
 FAILED_TESTS=0
 
-# Funções auxiliares
 print_header() {
     echo -e "\n${BLUE}========================================${NC}"
     echo -e "${BLUE}$1${NC}"
@@ -166,7 +161,7 @@ test_users_admin() {
 }
 
 # =========================================
-# 3. TESTES DE CATEGORIA - CORRIGIDO
+# 3. TESTES DE CATEGORIA
 # =========================================
 test_categories() {
     print_header "3. TESTES DE CATEGORIA"
@@ -210,7 +205,7 @@ test_categories() {
 }
 
 # =========================================
-# 4. TESTES DE PRODUTO - CORRIGIDO
+# 4. TESTES DE PRODUTO
 # =========================================
 test_products() {
     print_header "4. TESTES DE PRODUTO"
@@ -285,7 +280,7 @@ test_products() {
 }
 
 # =========================================
-# 5. REGISTRO E LOGIN DE CLIENTE - CORRIGIDO
+# 5. REGISTRO E LOGIN DE CLIENTE
 # =========================================
 test_customer_auth() {
     print_header "5. REGISTRO E LOGIN DE CLIENTE"
@@ -353,7 +348,7 @@ test_customer_auth() {
 }
 
 # =========================================
-# 6. TESTES DE CARRINHO - CORRIGIDO
+# 6. TESTES DE CARRINHO
 # =========================================
 test_cart() {
     print_header "6. TESTES DE CARRINHO"
@@ -406,7 +401,7 @@ test_cart() {
 }
 
 # =========================================
-# 7. TESTES DE PEDIDO - CORRIGIDO
+# 7. TESTES DE PEDIDO
 # =========================================
 test_orders() {
     print_header "7. TESTES DE PEDIDO"
@@ -453,7 +448,7 @@ test_orders() {
 }
 
 # =========================================
-# 8. TESTES DE PAGAMENTO - CORRIGIDO
+# 8. TESTES DE PAGAMENTO
 # =========================================
 test_payments() {
     print_header "8. TESTES DE PAGAMENTO"
@@ -514,7 +509,7 @@ test_payments() {
 }
 
 # =========================================
-# 9. TESTES DE AVALIAÇÃO - CORRIGIDO
+# 9. TESTES DE AVALIAÇÃO
 # =========================================
 test_reviews() {
     print_header "9. TESTES DE AVALIAÇÃO"
@@ -569,7 +564,7 @@ test_reviews() {
 }
 
 # =========================================
-# 10. TESTES DE USUÁRIO (CLIENTE) - CORRIGIDO
+# 10. TESTES DE USUÁRIO (CLIENTE)
 # =========================================
 test_user_operations() {
     print_header "10. TESTES DE USUÁRIO (CLIENTE)"
