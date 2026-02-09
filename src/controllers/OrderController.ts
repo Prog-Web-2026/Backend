@@ -23,7 +23,6 @@ export class OrderController {
 
       if (!selectedCartItemIds || !Array.isArray(selectedCartItemIds)) {
         return res.status(400).json({
-          success: false,
           message: "IDs dos itens do carrinho são obrigatórios",
         });
       }
@@ -36,7 +35,6 @@ export class OrderController {
       );
 
       res.status(201).json({
-        success: true,
         message: "Pedido criado com sucesso",
         ...result,
       });
@@ -58,7 +56,6 @@ export class OrderController {
       );
 
       res.status(200).json({
-        success: true,
         order,
       });
     } catch (error) {
@@ -84,7 +81,6 @@ export class OrderController {
       );
 
       res.status(200).json({
-        success: true,
         orders,
       });
     } catch (error) {
@@ -107,7 +103,6 @@ export class OrderController {
       );
 
       res.status(200).json({
-        success: true,
         message: "Status do pedido atualizado",
         order,
       });
@@ -129,7 +124,6 @@ export class OrderController {
       );
 
       res.status(200).json({
-        success: true,
         message: "Pedido cancelado com sucesso",
         order,
       });
@@ -153,7 +147,6 @@ export class OrderController {
       );
 
       res.status(200).json({
-        success: true,
         message: "Pagamento processado com sucesso",
         ...result,
       });
@@ -173,7 +166,6 @@ export class OrderController {
       );
 
       res.status(200).json({
-        success: true,
         stats,
       });
     } catch (error) {
@@ -200,7 +192,6 @@ export class OrderController {
       );
 
       res.status(200).json({
-        success: true,
         message: `Atribuição ${accept ? "aceita" : "rejeitada"}`,
         ...result,
       });
@@ -224,7 +215,6 @@ export class OrderController {
       );
 
       res.status(200).json({
-        success: true,
         assignments,
       });
     } catch (error) {
@@ -235,7 +225,6 @@ export class OrderController {
 
 const controller = new OrderController();
 
-// Rotas
 router.post(
   "/",
   customerMiddleware,

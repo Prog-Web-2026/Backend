@@ -29,7 +29,6 @@ export class AuthMiddleware {
 
       if (!authHeader) {
         return res.status(401).json({
-          success: false,
           message: "Token não fornecido",
         });
       }
@@ -38,7 +37,6 @@ export class AuthMiddleware {
 
       if (!token) {
         return res.status(401).json({
-          success: false,
           message: "Formato de token inválido. Use: Bearer <token>",
         });
       }
@@ -47,7 +45,6 @@ export class AuthMiddleware {
 
       if (!payload) {
         return res.status(401).json({
-          success: false,
           message: "Token inválido ou expirado",
         });
       }
@@ -56,7 +53,6 @@ export class AuthMiddleware {
       next();
     } catch (error: any) {
       return res.status(401).json({
-        success: false,
         message: "Erro ao validar token",
         error: error.message,
       });
@@ -70,14 +66,12 @@ export class AuthMiddleware {
   ) => {
     if (!req.user) {
       return res.status(401).json({
-        success: false,
         message: "Usuário não autenticado",
       });
     }
 
     if (req.user.role !== UserRole.ADMIN) {
       return res.status(403).json({
-        success: false,
         message:
           "Acesso negado. Apenas administradores podem acessar esta rota.",
       });
@@ -93,14 +87,12 @@ export class AuthMiddleware {
   ) => {
     if (!req.user) {
       return res.status(401).json({
-        success: false,
         message: "Usuário não autenticado",
       });
     }
 
     if (req.user.role !== UserRole.CUSTOMER) {
       return res.status(403).json({
-        success: false,
         message: "Acesso negado. Apenas clientes podem acessar esta rota.",
       });
     }
@@ -115,14 +107,12 @@ export class AuthMiddleware {
   ) => {
     if (!req.user) {
       return res.status(401).json({
-        success: false,
         message: "Usuário não autenticado",
       });
     }
 
     if (req.user.role !== UserRole.DELIVERY) {
       return res.status(403).json({
-        success: false,
         message: "Acesso negado. Apenas entregadores podem acessar esta rota.",
       });
     }

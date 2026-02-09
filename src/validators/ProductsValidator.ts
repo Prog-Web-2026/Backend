@@ -1,4 +1,3 @@
-// src/validators/ProductsValidator.ts
 import Joi from "joi";
 
 export const createProductSchema = Joi.object({

@@ -33,7 +33,6 @@ export class PaymentMethodService {
       throw new ForbiddenError("Apenas clientes podem adicionar cartões");
     }
 
-    // Validações básicas
     if (!cardData.cardHolderName) {
       throw new ValidationError("Nome do titular é obrigatório");
     }
@@ -59,7 +58,6 @@ export class PaymentMethodService {
       cardBrand,
       cardExpiryMonth: cardData.cardExpiryMonth,
       cardExpiryYear: cardData.cardExpiryYear,
-      // NÃO salvar: cardNumber completo, cardCvv
     };
 
     const paymentMethod =
@@ -88,7 +86,6 @@ export class PaymentMethodService {
       throw new ForbiddenError("Apenas clientes podem adicionar cartões");
     }
 
-    // Validações básicas
     if (!cardData.cardHolderName) {
       throw new ValidationError("Nome do titular é obrigatório");
     }

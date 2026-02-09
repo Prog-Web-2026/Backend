@@ -175,7 +175,6 @@ export class PaymentService {
   }
 
   private async processPixPayment(amount: number): Promise<any> {
-    // Gera código PIX simples
     const pixCode = `00020126580014BR.GOV.BCB.PIX0136${this.generateGuid()}52040000530398654${Math.round(
       amount * 100,
     )
@@ -197,7 +196,6 @@ export class PaymentService {
       .padStart(4, "0")}`;
     const boletoDueDate = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000); // 3 dias
 
-    // Linha digitável simples
     const linhaDigitavel = `34191.11111 11111.111111 11111.111111 1 111100000${Math.round(
       amount * 100,
     )

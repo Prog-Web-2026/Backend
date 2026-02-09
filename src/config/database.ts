@@ -14,7 +14,7 @@ const sequelize = isTest
   : new Sequelize(
       process.env.DB_NAME as string,
       process.env.DB_USER as string,
-      process.env.DB_PASSWORD as string,
+      process.env.DB_PASS as string,
       {
         host: process.env.DB_HOST,
         port: Number(process.env.DB_PORT),

@@ -31,7 +31,6 @@ export class CartController {
 
   async checkoutSelectedItems(req: Request, res: Response, next: NextFunction) {
     try {
-      // validação
       CartValidator.checkout(req.body);
 
       const userId = req.user!.id;
@@ -52,7 +51,6 @@ export class CartController {
 
   async updateCartItem(req: Request, res: Response, next: NextFunction) {
     try {
-      // validação
       CartValidator.updateCartItem(req.body);
 
       const userId = req.user!.id;
@@ -74,7 +72,6 @@ export class CartController {
     }
   }
 
-  // restante do controller continua igual
   async getUserCart(req: Request, res: Response, next: NextFunction) {
     try {
       const userId = req.user!.id;

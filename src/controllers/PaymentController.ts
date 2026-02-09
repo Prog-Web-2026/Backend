@@ -102,7 +102,6 @@ export class PaymentController {
 
 const controller = new PaymentController();
 
-// Rotas
 router.get(
   "/user",
   authenticate,

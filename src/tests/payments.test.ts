@@ -1,4 +1,3 @@
-// tests/payments.e2e.test.ts
 import request from "supertest";
 import { app } from "../app";
 import { Order } from "../models/OrderModel";
@@ -17,8 +16,6 @@ describe("Payment Controller E2E Tests", () => {
   });
 
   beforeEach(async () => {
-    // Criar pedido com pagamento para cada teste
-    // Adicionar ao carrinho
     const item = await request(app)
       .post("/cart")
       .set("Authorization", `Bearer ${customerToken}`)
@@ -27,7 +24,6 @@ describe("Payment Controller E2E Tests", () => {
         quantity: 1,
       });
 
-    // Criar pedido
     const orderResponse = await request(app)
       .post("/orders")
       .set("Authorization", `Bearer ${customerToken}`)
@@ -37,7 +33,6 @@ describe("Payment Controller E2E Tests", () => {
 
     orderId = orderResponse.body.order.id;
 
-    // Processar pagamento
     const paymentResponse = await request(app)
       .post(`/orders/${orderId}/payment`)
       .set("Authorization", `Bearer ${customerToken}`)
@@ -56,7 +51,6 @@ describe("Payment Controller E2E Tests", () => {
   });
 
   afterEach(async () => {
-    // Limpar
     const Cart = (await import("../models/CartModel")).Cart;
     await Cart.destroy({ where: { userId: global.testCustomer.id } });
     await Payment.destroy({ where: {} });
@@ -85,7 +79,6 @@ describe("Payment Controller E2E Tests", () => {
     });
 
     it("cliente não deve ver pagamento de outro cliente", async () => {
-      // Criar outro cliente e seu pagamento
       const User = (await import("../models/UserModel")).User;
       const anotherCustomer = await User.create({
         name: "Outro Cliente Pagamento",
@@ -97,7 +90,6 @@ describe("Payment Controller E2E Tests", () => {
 
       const anotherToken = await getAuthToken(anotherCustomer);
 
-      // Outro cliente cria pedido e pagamento
       const item = await request(app)
         .post("/cart")
         .set("Authorization", `Bearer ${anotherToken}`)
@@ -122,7 +114,6 @@ describe("Payment Controller E2E Tests", () => {
 
       const anotherPaymentId = paymentRes.body.payment.id;
 
-      // Cliente principal tenta ver
       const response = await request(app)
         .get(`/payments/${anotherPaymentId}`)
         .set("Authorization", `Bearer ${customerToken}`);
@@ -144,7 +135,6 @@ describe("Payment Controller E2E Tests", () => {
     });
 
     it("deve retornar 404 para pedido sem pagamento", async () => {
-      // Criar pedido sem pagamento
       const item = await request(app)
         .post("/cart")
         .set("Authorization", `Bearer ${customerToken}`)
@@ -217,7 +207,6 @@ describe("Payment Controller E2E Tests", () => {
     });
 
     it("não deve estornar pagamento já estornado", async () => {
-      // Primeiro estorno
       await request(app)
         .post(`/payments/${paymentId}/refund`)
         .set("Authorization", `Bearer ${adminToken}`)
@@ -225,7 +214,6 @@ describe("Payment Controller E2E Tests", () => {
           reason: "Teste",
         });
 
-      // Segundo estorno (não deve permitir)
       const response = await request(app)
         .post(`/payments/${paymentId}/refund`)
         .set("Authorization", `Bearer ${adminToken}`)
@@ -250,7 +238,6 @@ describe("Payment Controller E2E Tests", () => {
 
   describe("DELETE /payments/:id/cancel", () => {
     it("cliente deve cancelar pagamento pendente", async () => {
-      // Criar pagamento pendente (boleto)
       const item = await request(app)
         .post("/cart")
         .set("Authorization", `Bearer ${customerToken}`)
@@ -277,14 +264,12 @@ describe("Payment Controller E2E Tests", () => {
 
       const pendingPaymentId = paymentRes.body.payment.id;
 
-      // Atualizar status para pending (simulando boleto não pago)
       const PaymentModel = (await import("../models/PaymentModel")).Payment;
       await PaymentModel.update(
         { status: PaymentStatus.PENDING },
         { where: { id: pendingPaymentId } },
       );
 
-      // Cancelar pagamento
       const response = await request(app)
         .delete(`/payments/${pendingPaymentId}/cancel`)
         .set("Authorization", `Bearer ${customerToken}`);
@@ -302,7 +287,6 @@ describe("Payment Controller E2E Tests", () => {
     });
 
     it("admin deve cancelar pagamento de qualquer usuário", async () => {
-      // Criar pagamento pendente com outro usuário
       const User = (await import("../models/UserModel")).User;
       const anotherCustomer = await User.create({
         name: "Cliente Cancelamento",
@@ -338,7 +322,6 @@ describe("Payment Controller E2E Tests", () => {
 
       const pendingPaymentId = paymentRes.body.payment.id;
 
-      // Admin cancela
       const response = await request(app)
         .delete(`/payments/${pendingPaymentId}/cancel`)
         .set("Authorization", `Bearer ${adminToken}`);

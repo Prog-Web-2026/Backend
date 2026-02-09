@@ -129,7 +129,6 @@ export class UserService {
       throw new ForbiddenError("Apenas clientes podem atualizar endereço");
     }
 
-    // Geocodificar o endereço para obter coordenadas
     const fullAddress = `${address.street}, ${address.number} - ${address.neighborhood}, ${address.city} - ${address.state}`;
     const coordinates =
       await this.geolocationService.geocodeAddress(fullAddress);

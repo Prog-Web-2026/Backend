@@ -14,7 +14,7 @@ export const updateUserSchema = Joi.object({
   name: Joi.string().optional(),
   email: Joi.string().email().optional(),
   phone: Joi.string().optional(),
-  role: Joi.string().valid("admin", "customer", "delivery").optional(), // permite role
+  role: Joi.string().valid("admin", "customer", "delivery").optional(),
 });
 
 export const updateAddressSchema: ObjectSchema = Joi.object({
@@ -38,7 +38,6 @@ export const updateAddressSchema: ObjectSchema = Joi.object({
     .messages({ "any.required": errorCodes.REQUIRED }),
 });
 
-// Adicionar método de pagamento
 export const addPaymentMethodSchema: ObjectSchema = Joi.object({
   type: Joi.string()
     .valid("credit_card", "debit_card", "pix", "boleto")

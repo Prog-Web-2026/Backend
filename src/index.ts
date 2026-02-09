@@ -4,6 +4,7 @@ import { app } from "./app";
 
 import { associatePayment } from "./models/PaymentModel";
 import { associateOrder } from "./models/OrderModel";
+import { seedAdmin } from "./config/configAdmin";
 
 dotenv.config();
 
@@ -16,6 +17,7 @@ sequelize
   .sync({ force: false })
   .then(() => {
     console.log("Banco de dados conectado!");
+    seedAdmin();
     app.listen(PORT, () => console.log(`Servidor rodando na porta ${PORT}`));
   })
   .catch((error) => {

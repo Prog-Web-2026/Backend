@@ -1,4 +1,3 @@
-// src/controllers/ProductController.ts
 import { Request, Response, NextFunction, Router } from "express";
 import { ProductService } from "../services/ProductService";
 import { UserRole } from "../models/UserModel";
@@ -230,13 +229,11 @@ export class ProductController {
 
 const controller = new ProductController();
 
-// Rotas Públicas
 publicRouter.get("/", controller.getAllProducts.bind(controller));
 publicRouter.get("/search", controller.searchProducts.bind(controller));
 publicRouter.get("/:id", controller.getProductById.bind(controller));
 publicRouter.get("/:id/reviews", controller.getProductReviews.bind(controller));
 
-// Rotas Protegidas
 protectedRouter.post(
   "/:id/reviews",
   customerMiddleware,

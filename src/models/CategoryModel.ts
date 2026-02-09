@@ -1,12 +1,10 @@
 import { Model, DataTypes, Optional } from "sequelize";
 import sequelize from "../config/database";
-import { Product } from "./ProductModel";
 
 export interface CategoryAttributes {
   id: number;
   name: string;
   description?: string;
-  imageUrl?: string;
   isActive: boolean;
   createdAt?: Date;
   updatedAt?: Date;
@@ -24,7 +22,6 @@ export class Category
   public id!: number;
   public name!: string;
   public description?: string;
-  public imageUrl?: string;
   public isActive!: boolean;
   public readonly createdAt!: Date;
   public readonly updatedAt!: Date;
@@ -47,10 +44,6 @@ Category.init(
     },
     description: {
       type: DataTypes.TEXT,
-      allowNull: true,
-    },
-    imageUrl: {
-      type: DataTypes.STRING,
       allowNull: true,
     },
     isActive: {

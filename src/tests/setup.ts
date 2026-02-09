@@ -1,4 +1,3 @@
-// tests/setup.ts
 import sequelize from "../config/database";
 import { Category } from "../models/CategoryModel";
 import { Product } from "../models/ProductModel";
@@ -18,7 +17,6 @@ declare global {
   var getAuthToken: (user: User) => Promise<string>;
 }
 
-// Cria usuário de teste
 export const createTestUser = async (
   role: UserRole = UserRole.CUSTOMER,
   email?: string,
@@ -43,7 +41,6 @@ export const createTestUser = async (
   });
 };
 
-// Gera token JWT para teste
 export const getAuthToken = async (user: User) => {
   return authServiceInstance.generateToken({
     id: user.id,
@@ -52,7 +49,6 @@ export const getAuthToken = async (user: User) => {
   });
 };
 
-// Configuração global antes de todos os testes
 beforeAll(async () => {
   global.authService = authServiceInstance;
   global.getAuthToken = getAuthToken;
@@ -94,12 +90,10 @@ beforeAll(async () => {
   });
 });
 
-// Fecha conexão após todos os testes
 afterAll(async () => {
   await sequelize.close();
 });
 
-// Limpa dados transacionais entre testes
 afterEach(async () => {
   const models = [
     "Payment",

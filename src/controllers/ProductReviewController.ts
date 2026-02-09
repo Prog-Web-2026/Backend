@@ -224,7 +224,6 @@ export class ProductReviewController {
 const controller = new ProductReviewController();
 const uploadMiddleware = fileUploadService.getUploadMiddleware();
 
-// Rotas públicas
 router.get(
   "/product/:productId",
   controller.getProductReviews.bind(controller),
@@ -234,7 +233,6 @@ router.get(
   controller.getProductReviewStats.bind(controller),
 );
 
-// Rotas autenticadas para clientes
 router.post(
   "/product/:productId",
   authenticate,
@@ -259,7 +257,6 @@ router.post(
   controller.markReviewAsHelpful.bind(controller),
 );
 
-// Rotas para gerenciamento de avaliações
 router.get("/:id", authenticate, controller.getReviewById.bind(controller));
 router.put(
   "/:id",
@@ -269,7 +266,6 @@ router.put(
 );
 router.delete("/:id", authenticate, controller.deleteReview.bind(controller));
 
-// Rotas para admin
 router.get(
   "/admin/recent",
   authenticate,

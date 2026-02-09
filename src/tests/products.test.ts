@@ -1,4 +1,3 @@
-// tests/products.e2e.test.ts
 import request from "supertest";
 import { app } from "../app";
 import { Product } from "../models/ProductModel";
@@ -10,7 +9,6 @@ describe("Product Controller E2E Tests", () => {
   let customerToken: string;
 
   beforeAll(async () => {
-    // Obter tokens antes de todos os testes
     adminToken = await global.getAuthToken(global.testAdmin);
     customerToken = await global.getAuthToken(global.testCustomer);
 

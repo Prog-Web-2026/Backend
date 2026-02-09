@@ -1,4 +1,3 @@
-// src/tests/users.test.ts
 import request from "supertest";
 import { app } from "../app";
 import { UserRole } from "../models/UserModel";
@@ -95,7 +94,7 @@ describe("User Controller E2E Tests", () => {
         .send({
           name: "Nome Atualizado",
           email: "customer.updated@example.com",
-          phone: "11988887777", // agora permitido pelo schema
+          phone: "11988887777",
         });
 
       expect(response.status).toBe(200);

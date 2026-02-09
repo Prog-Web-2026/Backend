@@ -14,7 +14,6 @@ export interface ProductAttributes {
   dimensions?: string;
   isActive: boolean;
 
-  // ALTERADO: adicionados campos para avaliações
   averageRating: number;
   reviewCount: number;
 
@@ -47,7 +46,6 @@ export class Product
   public dimensions?: string;
   public isActive!: boolean;
 
-  // ALTERADO: adicionados campos para avaliações
   public averageRating!: number;
   public reviewCount!: number;
 

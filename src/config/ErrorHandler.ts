@@ -10,7 +10,6 @@ export class AppError extends Error {
     this.statusCode = statusCode;
     this.details = details;
     this.isOperational = true;
-    Error.captureStackTrace(this, this.constructor);
   }
 }
 
@@ -52,18 +51,14 @@ export const errorHandler = (
 ) => {
   if (error instanceof AppError) {
     return res.status(error.statusCode).json({
-      success: false,
       message: error.message,
       ...(error.details && { details: error.details }),
-      ...(process.env.NODE_ENV === "development" && { stack: error.stack }),
     });
   }
 
   console.error("Erro inesperado:", error);
 
   return res.status(500).json({
-    success: false,
     message: "Erro interno do servidor",
-    ...(process.env.NODE_ENV === "development" && { stack: error.stack }),
   });
 };

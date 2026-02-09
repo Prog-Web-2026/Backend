@@ -167,7 +167,6 @@ Payment.init(
       },
     },
 
-    // PIX
     pixCode: {
       type: DataTypes.TEXT,
       allowNull: true,
@@ -181,7 +180,6 @@ Payment.init(
       allowNull: true,
     },
 
-    // Boleto
     boletoNumber: {
       type: DataTypes.STRING,
       allowNull: true,

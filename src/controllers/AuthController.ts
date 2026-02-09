@@ -7,7 +7,6 @@ import { ValidationError, UnauthorizedError } from "../config/ErrorHandler";
 const authService = new AuthService();
 const userService = new UserService();
 
-// Criar routers separados
 const publicRouter = Router();
 const protectedRouter = Router();
 
@@ -150,7 +149,6 @@ export class AuthController {
 
       const result = await userService.login(email, password);
 
-      // Verificar se é entregador
       if (result.user.role !== UserRole.DELIVERY) {
         throw new UnauthorizedError(
           "Apenas entregadores podem fazer login aqui",

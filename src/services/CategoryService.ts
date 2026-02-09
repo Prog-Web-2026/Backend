@@ -1,6 +1,5 @@
 import { CategoryRepository } from "../repository/CategoryRepository";
 import { ProductRepository } from "../repository/ProductRepository";
-import { FileUploadService } from "./FileUploadService";
 import {
   Category,
   CategoryAttributes,
@@ -17,11 +16,9 @@ import {
 export class CategoryService {
   private categoryRepository = new CategoryRepository();
   private productRepository = new ProductRepository();
-  private fileUploadService = new FileUploadService();
 
   async createCategory(
     data: CategoryCreationAttributes,
-    imageFile?: Express.Multer.File,
     currentUserRole?: UserRole,
   ) {
     if (currentUserRole !== UserRole.ADMIN) {
@@ -33,11 +30,6 @@ export class CategoryService {
     );
     if (existingCategory) {
       throw new ValidationError("Categoria com este nome já existe");
-    }
-
-    if (imageFile) {
-      this.fileUploadService.validateImageFile(imageFile);
-      data.imageUrl = this.fileUploadService.getFileUrl(imageFile.filename);
     }
 
     return await this.categoryRepository.create(data);
@@ -124,7 +116,6 @@ export class CategoryService {
   async updateCategory(
     id: number,
     data: Partial<CategoryAttributes>,
-    imageFile?: Express.Multer.File,
     currentUserRole?: UserRole,
   ) {
     if (currentUserRole !== UserRole.ADMIN) {
@@ -145,19 +136,6 @@ export class CategoryService {
       if (existingCategory && existingCategory.id !== id) {
         throw new ValidationError("Categoria com este nome já existe");
       }
-    }
-
-    if (imageFile) {
-      this.fileUploadService.validateImageFile(imageFile);
-
-      if (category.imageUrl) {
-        const oldFilename = category.imageUrl.split("/").pop();
-        if (oldFilename) {
-          await this.fileUploadService.deleteFile(oldFilename);
-        }
-      }
-
-      data.imageUrl = this.fileUploadService.getFileUrl(imageFile.filename);
     }
 
     const affectedCount = await this.categoryRepository.update(id, data);
