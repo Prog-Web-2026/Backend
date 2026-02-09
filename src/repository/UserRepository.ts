@@ -1,51 +1,59 @@
-import { User } from "../models/UserModel";
-import { PasswordService } from "../services/PasswordService";
-
-const passwordService = new PasswordService();
+import { FindOptions } from "sequelize";
+import {
+  User,
+  UserAttributes,
+  UserCreationAttributes,
+  UserRole,
+} from "../models/UserModel";
 
 export class UserRepository {
-  async createUser(name: string, email: string, password: string) {
-    // Verificar se email já existe
-    const existingUser = await User.findOne({ where: { email } });
-    if (existingUser) {
-      throw new Error("Email já registrado");
-    }
-
-    // Hash de senha
-    const hashedPassword = await passwordService.hashPassword(password);
-
-    const user = await User.create({ name, email, password: hashedPassword });
-    return user;
+  async create(data: UserCreationAttributes): Promise<User> {
+    return await User.create(data);
   }
 
-  async getAllUsers() {
-    return await User.findAll();
+  async findAll(options?: FindOptions): Promise<User[]> {
+    return await User.findAll(options);
   }
 
-  async getUserById(id: number) {
-    return await User.findByPk(id);
+  async findById(id: number, options?: FindOptions): Promise<User | null> {
+    return await User.findByPk(id, options);
   }
 
-  async getUserByEmail(email: string) {
-    return await User.findOne({ where: { email } });
+  async findOne(options: FindOptions): Promise<User | null> {
+    return await User.findOne(options);
   }
 
-  async updateUser(id: number, data: Partial<User>) {
-    const user = await User.findByPk(id);
-    if (!user) return null;
-
-    // Se a senha está sendo atualizada, fazer hash
-    if (data.password) {
-      data.password = await passwordService.hashPassword(data.password);
-    }
-
-    return await user.update(data);
+  async findByEmail(
+    email: string,
+    options?: FindOptions,
+  ): Promise<User | null> {
+    return await User.findOne({
+      where: { email },
+      ...options,
+    });
   }
 
-  async deleteUser(id: number) {
-    const user = await User.findByPk(id);
-    if (!user) return null;
-    await user.destroy();
-    return user;
+  async update(id: number, data: Partial<UserAttributes>): Promise<number> {
+    const [affectedCount] = await User.update(data, {
+      where: { id },
+    });
+
+    return affectedCount;
+  }
+
+  async delete(id: number): Promise<number> {
+    return await User.destroy({
+      where: { id },
+    });
+  }
+
+  async findDeliveryPersons(options?: FindOptions): Promise<User[]> {
+    return await User.findAll({
+      where: {
+        role: UserRole.DELIVERY,
+        isActive: true,
+      },
+      ...options,
+    });
   }
 }

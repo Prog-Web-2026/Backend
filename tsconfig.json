@@ -9,7 +9,13 @@
     "skipLibCheck": true,
     "types": [
       "node",
-      "jest"
+      "jest",
+      "express",
+      "multer"
     ]
-  }
+  },
+  "include": [
+    "src/**/*.ts",
+    "src/tests/global.d.ts"
+  ]
 }

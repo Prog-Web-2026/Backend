@@ -1,26 +1,30 @@
 // src/app.ts
 import express from "express";
 import rateLimit from "express-rate-limit";
-
-import userRoutes from "./routes/UserRoutes";
-import enderecoRoutes from "./routes/EnderecoRoutes";
-import produtoRoutes from "./routes/ProdutoRoutes";
-import carrinhoRoutes from "./routes/CarrinnhoRoutes";
-import itemCarrinhoRoutes from "./routes/ItemCarrinhoRoutes";
-import pedidoRoutes from "./routes/PedidoRoutes";
-import itemPedidoRoutes from "./routes/ItemPedidoRoutes";
-import pagamentoRoutes from "./routes/PagamentRoutes";
-import entregadorRoutes from "./routes/EntregadorRoutes";
-import entregaRoutes from "./routes/EntregaRoutes";
-import avaliacaoRoutes from "./routes/AvaliacaoRoutes";
-import cartaoPagamentoRoutes from "./routes/CartaoPagamentoRoutes";
+import { authenticate } from "./middlewares/AuthMiddleware";
+import {
+  AuthPublicRouter,
+  AuthProtectedRouter,
+} from "./controllers/AuthController";
+import { UserRouter } from "./controllers/UserController";
+import {
+  ProductPublicRouter,
+  ProductProtectedRouter,
+} from "./controllers/ProductController";
+import { CategoryRouter } from "./controllers/CategoryController";
+import { OrderRouter } from "./controllers/OrderController";
+import { CartRouter } from "./controllers/CartController";
+import { PaymentRouter } from "./controllers/PaymentController";
+import { ProductReviewRouter } from "./controllers/ProductReviewController";
+import { errorHandler, NotFoundError } from "./config/ErrorHandler";
 
 export const app = express();
 app.use(express.json());
 
+// Rate limiting
 const limiter = rateLimit({
   windowMs: 60 * 1000,
-  max: 5,
+  max: 100,
   standardHeaders: true,
   legacyHeaders: false,
   message: "Muitas requisições. Tente novamente em instantes.",
@@ -31,18 +35,45 @@ if (process.env.NODE_ENV !== "test") {
 }
 
 app.get("/", (_req, res) => {
-  res.send("API rodando! Acesse suas rotas CRUD via endpoints. (v2)");
+  res.json({
+    message: "API E-commerce rodando!",
+    version: "2.0.0",
+    endpoints: {
+      auth: {
+        public:
+          "/auth (register, login, verify, delivery/register, delivery/login)",
+        protected: "/auth (logout, me, change-password, check, role, refresh)",
+      },
+      products: "/products",
+      categories: "/categories",
+      users: "/users",
+      orders: "/orders",
+      cart: "/cart",
+      payments: "/payments",
+      reviews: "/reviews",
+    },
+  });
 });
 
-app.use("/users", userRoutes);
-app.use("/enderecos", enderecoRoutes);
-app.use("/produtos", produtoRoutes);
-app.use("/carrinhos", carrinhoRoutes);
-app.use("/itens-carrinho", itemCarrinhoRoutes);
-app.use("/pedidos", pedidoRoutes);
-app.use("/itens-pedido", itemPedidoRoutes);
-app.use("/pagamentos", pagamentoRoutes);
-app.use("/entregadores", entregadorRoutes);
-app.use("/entregas", entregaRoutes);
-app.use("/avaliacoes", avaliacaoRoutes);
-app.use("/cartoes-pagamento", cartaoPagamentoRoutes);
+app.use("/auth", AuthPublicRouter);
+
+// ROTAS PÚBLICAS
+app.use("/products", ProductPublicRouter);
+app.use("/categories", CategoryRouter);
+
+app.use(authenticate);
+
+// ROTAS PROTEGIDAS
+app.use("/auth", AuthProtectedRouter);
+app.use("/users", UserRouter);
+app.use("/products", ProductProtectedRouter); // Rotas protegidas de produtos
+app.use("/orders", OrderRouter);
+app.use("/cart", CartRouter);
+app.use("/payments", PaymentRouter);
+app.use("/reviews", ProductReviewRouter);
+
+app.use((req, _res, next) => {
+  next(new NotFoundError(`Rota ${req.method} ${req.path} não encontrada`));
+});
+
+app.use(errorHandler);

@@ -1,55 +1,84 @@
-import Joi from "joi";
+import Joi, { ObjectSchema } from "joi";
+import { ValidationError } from "../config/ErrorHandler";
+import { UserRole } from "../models/UserModel";
 
-export class UserValidator {
-  // Esquema para criação de usuário
-  static createUserSchema = Joi.object({
-    name: Joi.string().min(3).max(100).required().messages({
-      "string.empty": "Nome não pode estar vazio",
-      "string.min": "Nome deve ter no mínimo 3 caracteres",
-      "string.max": "Nome deve ter no máximo 100 caracteres",
-      "any.required": "Nome é obrigatório",
-    }),
-    email: Joi.string().email().required().messages({
-      "string.email": "Email deve ser válido",
-      "any.required": "Email é obrigatório",
-    }),
-    password: Joi.string().min(6).max(100).required().messages({
-      "string.empty": "Senha não pode estar vazia",
-      "string.min": "Senha deve ter no mínimo 6 caracteres",
-      "string.max": "Senha deve ter no máximo 100 caracteres",
-      "any.required": "Senha é obrigatória",
-    }),
-  });
+export const errorCodes = {
+  REQUIRED: "INVALID_IS_EMPTY",
+  EMAIL: "INVALID_EMAIL",
+  ZIPCODE: "INVALID_ZIPCODE",
+  NUMBER: "INVALID_NUMBER",
+  EXPIRATION: "INVALID_EXPIRATION",
+};
 
-  // Esquema para login
-  static loginSchema = Joi.object({
-    email: Joi.string().email().required().messages({
-      "string.email": "Email deve ser válido",
-      "any.required": "Email é obrigatório",
-    }),
-    password: Joi.string().required().messages({
-      "string.empty": "Senha não pode estar vazia",
-      "any.required": "Senha é obrigatória",
-    }),
-  });
+export const updateUserSchema = Joi.object({
+  name: Joi.string().optional(),
+  email: Joi.string().email().optional(),
+  phone: Joi.string().optional(),
+  role: Joi.string().valid("admin", "customer", "delivery").optional(), // permite role
+});
 
-  // Esquema para atualizar usuário
-  static updateUserSchema = Joi.object({
-    name: Joi.string().min(3).max(100).optional().messages({
-      "string.min": "Nome deve ter no mínimo 3 caracteres",
-      "string.max": "Nome deve ter no máximo 100 caracteres",
-    }),
-    email: Joi.string().email().optional().messages({
-      "string.email": "Email deve ser válido",
-    }),
-    password: Joi.string().min(6).max(100).optional().messages({
-      "string.min": "Senha deve ter no mínimo 6 caracteres",
-      "string.max": "Senha deve ter no máximo 100 caracteres",
-    }),
-  });
+export const updateAddressSchema: ObjectSchema = Joi.object({
+  street: Joi.string()
+    .required()
+    .messages({ "any.required": errorCodes.REQUIRED }),
+  number: Joi.string()
+    .required()
+    .messages({ "any.required": errorCodes.REQUIRED }),
+  neighborhood: Joi.string()
+    .required()
+    .messages({ "any.required": errorCodes.REQUIRED }),
+  city: Joi.string()
+    .required()
+    .messages({ "any.required": errorCodes.REQUIRED }),
+  state: Joi.string()
+    .required()
+    .messages({ "any.required": errorCodes.REQUIRED }),
+  zipCode: Joi.string()
+    .required()
+    .messages({ "any.required": errorCodes.REQUIRED }),
+});
 
-  // Método para validar
-  static validate(schema: Joi.Schema, data: any) {
-    return schema.validate(data, { abortEarly: false });
-  }
-}
+// Adicionar método de pagamento
+export const addPaymentMethodSchema: ObjectSchema = Joi.object({
+  type: Joi.string()
+    .valid("credit_card", "debit_card", "pix", "boleto")
+    .required()
+    .messages({ "any.required": errorCodes.REQUIRED }),
+  cardHolderName: Joi.string().when("type", {
+    is: Joi.valid("credit_card", "debit_card"),
+    then: Joi.required().messages({ "any.required": errorCodes.REQUIRED }),
+    otherwise: Joi.forbidden(),
+  }),
+  cardNumber: Joi.string()
+    .creditCard()
+    .when("type", {
+      is: Joi.valid("credit_card", "debit_card"),
+      then: Joi.required().messages({ "any.required": errorCodes.REQUIRED }),
+      otherwise: Joi.forbidden(),
+    }),
+  cardExpiryMonth: Joi.number()
+    .integer()
+    .min(1)
+    .max(12)
+    .when("type", {
+      is: Joi.valid("credit_card", "debit_card"),
+      then: Joi.required().messages({ "any.required": errorCodes.REQUIRED }),
+      otherwise: Joi.forbidden(),
+    }),
+  cardExpiryYear: Joi.number()
+    .integer()
+    .min(new Date().getFullYear())
+    .when("type", {
+      is: Joi.valid("credit_card", "debit_card"),
+      then: Joi.required().messages({ "any.required": errorCodes.EXPIRATION }),
+      otherwise: Joi.forbidden(),
+    }),
+  cardCvv: Joi.string()
+    .pattern(/^\d{3,4}$/)
+    .when("type", {
+      is: Joi.valid("credit_card", "debit_card"),
+      then: Joi.required().messages({ "any.required": errorCodes.REQUIRED }),
+      otherwise: Joi.forbidden(),
+    }),
+  isDefault: Joi.boolean().optional(),
+});

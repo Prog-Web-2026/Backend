@@ -1,95 +1,211 @@
-import { Request, Response } from "express";
+import { Request, Response, Router, NextFunction } from "express";
 import { UserService } from "../services/UserService";
+import { UserRole } from "../models/UserModel";
+import {
+  adminMiddleware,
+  customerMiddleware,
+} from "../middlewares/AuthMiddleware";
+
+import {
+  updateUserSchema,
+  updateAddressSchema,
+  addPaymentMethodSchema,
+} from "../validators/UserValidator";
+import { validate } from "../validate";
 
 const userService = new UserService();
+const router = Router();
 
 export class UserController {
-  // Registrar novo usuário
-  async create(req: Request, res: Response) {
+  async getAllUsers(req: Request, res: Response, next: NextFunction) {
     try {
-      const { name, email, password } = req.body;
-      const user = await userService.create({ name, email, password });
-      res.status(201).json({
-        message: "Usuário criado com sucesso",
-        user: {
-          id: user.id,
-          name: user.name,
-          email: user.email,
-        },
-      });
-    } catch (error: any) {
-      res.status(400).json({ message: error.message || "Erro ao criar usuário" });
+      const role = req.user?.role as UserRole;
+      const { role: filterRole, isActive } = req.query;
+
+      const filters: any = {};
+      if (filterRole) filters.role = filterRole;
+      if (isActive !== undefined) filters.isActive = isActive === "true";
+
+      const users = await userService.getAllUsers(role, filters);
+      return res.status(200).json(users);
+    } catch (error) {
+      next(error);
     }
   }
 
-  // Login - Autenticar usuário
-  async login(req: Request, res: Response) {
+  async getUserById(req: Request, res: Response, next: NextFunction) {
     try {
-      const { email, password } = req.body;
-      const result = await userService.login(email, password);
-      res.status(200).json({
-        message: "Login realizado com sucesso",
-        ...result,
-      });
-    } catch (error: any) {
-      res.status(401).json({ message: error.message || "Erro ao fazer login" });
+      const id = Number(req.params.id);
+      const currentUserId = req.user?.id as number;
+      const role = req.user?.role as UserRole;
+
+      const user = await userService.getUserById(id, currentUserId, role);
+      return res.status(200).json(user);
+    } catch (error) {
+      next(error);
     }
   }
 
-  // Obter todos os usuários
-  async getAll(req: Request, res: Response) {
+  async updateUser(req: Request, res: Response, next: NextFunction) {
     try {
-      const users = await userService.getAll();
-      res.json(users);
-    } catch (error: any) {
-      res
-        .status(500)
-        .json({ message: "Erro ao obter usuários", error: error.message });
+      validate(updateUserSchema, req.body);
+
+      const user = await userService.updateUser(
+        Number(req.params.id),
+        req.body,
+        req.user.id,
+        req.user.role,
+      );
+
+      return res.json({ user });
+    } catch (err) {
+      next(err);
     }
   }
 
-  // Obter usuário por ID
-  async getById(req: Request, res: Response) {
+  async updateUserAddress(req: Request, res: Response, next: NextFunction) {
     try {
-      const user = await userService.getById(Number(req.params.id));
-      if (!user)
-        return res.status(404).json({ message: "Usuário não encontrado" });
-      res.json(user);
-    } catch (error: any) {
-      res
-        .status(500)
-        .json({ message: "Erro ao buscar usuário", error: error.message });
+      validate(updateAddressSchema, req.body);
+
+      const user = await userService.updateUserAddress(
+        req.user.id,
+        req.body,
+        req.user.role,
+      );
+
+      return res.json({ user });
+    } catch (err) {
+      next(err);
     }
   }
 
-  // Atualizar usuário
-  async update(req: Request, res: Response) {
+  async deleteUser(req: Request, res: Response, next: NextFunction) {
     try {
-      const user = await userService.update(Number(req.params.id), req.body);
-      if (!user)
-        return res.status(404).json({ message: "Usuário não encontrado" });
-      res.json({
-        message: "Usuário atualizado com sucesso",
+      const id = Number(req.params.id);
+      const currentUserId = req.user?.id as number;
+      const role = req.user?.role as UserRole;
+
+      await userService.deleteUser(id, currentUserId, role);
+      return res.status(200).json({ message: "Usuário excluído com sucesso" });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async toggleUserStatus(req: Request, res: Response, next: NextFunction) {
+    try {
+      const id = Number(req.params.id);
+      const role = req.user?.role as UserRole;
+      const { isActive } = req.body;
+
+      const user = await userService.toggleUserStatus(id, role, isActive);
+      return res.status(200).json({
+        message: `Usuário ${isActive ? "ativado" : "desativado"} com sucesso`,
         user,
       });
-    } catch (error: any) {
-      res
-        .status(500)
-        .json({ message: "Erro ao atualizar usuário", error: error.message });
+    } catch (error) {
+      next(error);
     }
   }
 
-  // Deletar usuário
-  async delete(req: Request, res: Response) {
+  async changePassword(req: Request, res: Response, next: NextFunction) {
     try {
-      const user = await userService.delete(Number(req.params.id));
-      if (!user)
-        return res.status(404).json({ message: "Usuário não encontrado" });
-      res.json({ message: "Usuário deletado com sucesso" });
-    } catch (error: any) {
-      res
-        .status(500)
-        .json({ message: "Erro ao deletar usuário", error: error.message });
+      const userId = req.user?.id as number;
+
+      if (!req.body.currentPassword || !req.body.newPassword) {
+        return res.status(400).json({
+          details: {
+            currentPassword: "INVALID_IS_EMPTY",
+            newPassword: "INVALID_IS_EMPTY",
+          },
+        });
+      }
+
+      const { currentPassword, newPassword } = req.body;
+      await userService.changePassword(userId, currentPassword, newPassword);
+      return res.status(200).json({ message: "Senha alterada com sucesso" });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async getPaymentMethods(req: Request, res: Response, next: NextFunction) {
+    try {
+      const userId = req.user?.id as number;
+      const role = req.user?.role as UserRole;
+
+      const paymentMethods = await userService.getUserPaymentMethods(
+        userId,
+        role,
+      );
+      return res.status(200).json(paymentMethods);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async addPaymentMethod(req: Request, res: Response, next: NextFunction) {
+    try {
+      validate(addPaymentMethodSchema, req.body);
+
+      const {
+        type,
+        cardHolderName,
+        cardNumber,
+        cardExpiryMonth,
+        cardExpiryYear,
+        cardCvv,
+        isDefault,
+      } = req.body;
+
+      const paymentMethod = await userService.addPaymentMethod(
+        req.user.id,
+        type,
+        {
+          cardHolderName,
+          cardNumber,
+          cardExpiryMonth,
+          cardExpiryYear,
+          cardCvv,
+          isDefault,
+        },
+        req.user.role,
+      );
+
+      return res.status(201).json({ paymentMethod });
+    } catch (err) {
+      next(err);
     }
   }
 }
+
+const controller = new UserController();
+
+router.get("/", adminMiddleware, controller.getAllUsers.bind(controller));
+router.get("/:id", controller.getUserById.bind(controller));
+router.put("/:id", controller.updateUser.bind(controller));
+router.delete("/:id", controller.deleteUser.bind(controller));
+router.patch(
+  "/:id/status",
+  adminMiddleware,
+  controller.toggleUserStatus.bind(controller),
+);
+
+router.put(
+  "/me/address",
+  customerMiddleware,
+  controller.updateUserAddress.bind(controller),
+);
+router.put("/me/password", controller.changePassword.bind(controller));
+router.get(
+  "/me/payment-methods",
+  customerMiddleware,
+  controller.getPaymentMethods.bind(controller),
+);
+router.post(
+  "/me/payment-methods",
+  customerMiddleware,
+  controller.addPaymentMethod.bind(controller),
+);
+
+export { router as UserRouter };
