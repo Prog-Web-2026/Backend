@@ -12,6 +12,7 @@ import {
   ValidationError,
   NotFoundError,
   ForbiddenError,
+  ConflictError,
 } from "../config/ErrorHandler";
 
 export class ProductService {
@@ -265,7 +266,7 @@ export class ProductService {
         productId,
       );
     if (existingReview) {
-      throw new ValidationError("Você já avaliou este produto");
+      throw new ConflictError("Você já avaliou este produto");
     }
 
     let imageUrl: string | undefined;

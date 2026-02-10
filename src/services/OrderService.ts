@@ -12,6 +12,7 @@ import {
   ValidationError,
   NotFoundError,
   ForbiddenError,
+  ConflictError,
 } from "../config/ErrorHandler";
 
 export class OrderService {
@@ -25,7 +26,7 @@ export class OrderService {
     userId: number,
     selectedCartItemIds: number[],
     notes?: string,
-    currentUserRole: UserRole = UserRole.CUSTOMER
+    currentUserRole: UserRole = UserRole.CUSTOMER,
   ) {
     if (currentUserRole !== UserRole.CUSTOMER) {
       throw new ForbiddenError("Apenas clientes podem criar pedidos");
@@ -38,14 +39,14 @@ export class OrderService {
 
     if (!user.address) {
       throw new ValidationError(
-        "Usuário não tem endereço cadastrado. Atualize seu endereço."
+        "Usuário não tem endereço cadastrado. Atualize seu endereço.",
       );
     }
 
     const cartService = new CartService();
     const checkoutResult = await cartService.checkoutSelectedItems(
       userId,
-      selectedCartItemIds
+      selectedCartItemIds,
     );
 
     if (checkoutResult.items.length === 0) {
@@ -54,7 +55,6 @@ export class OrderService {
 
     const totalAmount = checkoutResult.subtotal;
 
-    // Formata o endereço como string
     const address = user.address;
     const deliveryAddress = `${address.street}, ${address.number}${address.complement ? ` - ${address.complement}` : ""}, ${address.neighborhood}, ${address.city} - ${address.state}, ${address.zipCode}`;
 
@@ -86,7 +86,7 @@ export class OrderService {
 
     await cartService.removeSelectedItemsAfterCheckout(
       userId,
-      selectedCartItemIds
+      selectedCartItemIds,
     );
 
     return {
@@ -98,7 +98,7 @@ export class OrderService {
   async getOrderById(
     orderId: number,
     userId: number,
-    currentUserRole: UserRole
+    currentUserRole: UserRole,
   ) {
     const order = await this.orderRepository.findById(orderId, {
       include: [
@@ -132,10 +132,13 @@ export class OrderService {
       status?: OrderStatus;
       limit?: number;
       offset?: number;
-    }
+    },
   ) {
     const baseInclude = [
-      { association: "customer", attributes: ["id", "name", "email", "address"] },
+      {
+        association: "customer",
+        attributes: ["id", "name", "email", "address"],
+      },
       { association: "items", include: [{ association: "product" }] },
       { association: "payment" },
     ];
@@ -157,7 +160,10 @@ export class OrderService {
         where: { deliveryId: userId },
         include: [
           ...baseInclude,
-          { association: "deliveryPerson", attributes: ["id", "name", "email"] },
+          {
+            association: "deliveryPerson",
+            attributes: ["id", "name", "email"],
+          },
         ],
         order: [["createdAt", "DESC"]],
       };
@@ -171,7 +177,10 @@ export class OrderService {
       const options: any = {
         include: [
           ...baseInclude,
-          { association: "deliveryPerson", attributes: ["id", "name", "email"] },
+          {
+            association: "deliveryPerson",
+            attributes: ["id", "name", "email"],
+          },
         ],
         order: [["createdAt", "DESC"]],
       };
@@ -189,7 +198,7 @@ export class OrderService {
   async getAvailableOrdersForDelivery(currentUserRole: UserRole) {
     if (currentUserRole !== UserRole.DELIVERY) {
       throw new ForbiddenError(
-        "Apenas entregadores podem ver pedidos disponíveis"
+        "Apenas entregadores podem ver pedidos disponíveis",
       );
     }
 
@@ -199,7 +208,7 @@ export class OrderService {
   async acceptOrderForDelivery(
     orderId: number,
     deliveryId: number,
-    currentUserRole: UserRole
+    currentUserRole: UserRole,
   ) {
     if (currentUserRole !== UserRole.DELIVERY) {
       throw new ForbiddenError("Apenas entregadores podem aceitar pedidos");
@@ -212,11 +221,11 @@ export class OrderService {
     }
 
     if (order.status !== OrderStatus.READY_FOR_PICKUP) {
-      throw new ValidationError("Pedido não está disponível para entrega");
+      throw new ConflictError("Pedido não está disponível para entrega");
     }
 
     if (order.deliveryId !== null) {
-      throw new ValidationError("Pedido já foi aceito por outro entregador");
+      throw new ConflictError("Pedido já foi aceito por outro entregador");
     }
 
     await this.orderRepository.update(orderId, {
@@ -231,7 +240,7 @@ export class OrderService {
     orderId: number,
     status: OrderStatus,
     userId: number,
-    currentUserRole: UserRole
+    currentUserRole: UserRole,
   ) {
     const order = await this.orderRepository.findById(orderId);
     if (!order) {
@@ -241,12 +250,12 @@ export class OrderService {
     const validTransitions = this.getValidStatusTransitions(
       order.status,
       currentUserRole,
-      order.deliveryId === userId
+      order.deliveryId === userId,
     );
 
     if (!validTransitions.includes(status)) {
       throw new ForbiddenError(
-        `Transição de status não permitida de ${order.status} para ${status}`
+        `Transição de status não permitida de ${order.status} para ${status}`,
       );
     }
 
@@ -256,7 +265,10 @@ export class OrderService {
       updateData.deliveredAt = new Date();
     }
 
-    const affectedCount = await this.orderRepository.update(orderId, updateData);
+    const affectedCount = await this.orderRepository.update(
+      orderId,
+      updateData,
+    );
 
     if (affectedCount === 0) {
       throw new AppError("Erro ao atualizar status do pedido", 500);
@@ -268,13 +280,19 @@ export class OrderService {
   private getValidStatusTransitions(
     currentStatus: OrderStatus,
     userRole: UserRole,
-    isAssignedDelivery: boolean
+    isAssignedDelivery: boolean,
   ): OrderStatus[] {
     const adminTransitions: Record<OrderStatus, OrderStatus[]> = {
       [OrderStatus.PENDING]: [OrderStatus.CONFIRMED, OrderStatus.CANCELLED],
       [OrderStatus.CONFIRMED]: [OrderStatus.PREPARING, OrderStatus.CANCELLED],
-      [OrderStatus.PREPARING]: [OrderStatus.READY_FOR_PICKUP, OrderStatus.CANCELLED],
-      [OrderStatus.READY_FOR_PICKUP]: [OrderStatus.OUT_FOR_DELIVERY, OrderStatus.CANCELLED],
+      [OrderStatus.PREPARING]: [
+        OrderStatus.READY_FOR_PICKUP,
+        OrderStatus.CANCELLED,
+      ],
+      [OrderStatus.READY_FOR_PICKUP]: [
+        OrderStatus.OUT_FOR_DELIVERY,
+        OrderStatus.CANCELLED,
+      ],
       [OrderStatus.OUT_FOR_DELIVERY]: [OrderStatus.DELIVERED],
       [OrderStatus.DELIVERED]: [],
       [OrderStatus.CANCELLED]: [],
@@ -303,7 +321,7 @@ export class OrderService {
   async cancelOrder(
     orderId: number,
     userId: number,
-    currentUserRole: UserRole
+    currentUserRole: UserRole,
   ) {
     const order = await this.orderRepository.findById(orderId, {
       include: [{ association: "items" }, { association: "payment" }],
@@ -324,29 +342,25 @@ export class OrderService {
       throw new ForbiddenError("Não é possível cancelar este pedido");
     }
 
-    // Retorna estoque dos produtos
     for (const item of order.items || []) {
       const product = await this.productRepository.findById(item.productId);
       if (product) {
         const newStock = product.stock + item.quantity;
-        await this.productRepository.update(item.productId, { stock: newStock });
+        await this.productRepository.update(item.productId, {
+          stock: newStock,
+        });
       }
     }
 
-    // Estorna pagamento se existir
     if (order.payment && order.payment.status === "success") {
-      await this.paymentService.refundPayment(
-        order.payment.id,
-        UserRole.ADMIN,
-        "Pedido cancelado"
-      );
+      await this.paymentService.refundPayment(order.payment.id, UserRole.ADMIN);
     }
 
     return await this.updateOrderStatus(
       orderId,
       OrderStatus.CANCELLED,
       userId,
-      currentUserRole
+      currentUserRole,
     );
   }
 
@@ -354,13 +368,13 @@ export class OrderService {
     orderId: number,
     userId: number,
     paymentData: { type: PaymentType },
-    currentUserRole: UserRole
+    currentUserRole: UserRole,
   ) {
     return await this.paymentService.processPayment(
       orderId,
       userId,
       paymentData,
-      currentUserRole
+      currentUserRole,
     );
   }
 
@@ -383,17 +397,25 @@ export class OrderService {
     const stats = {
       total: allOrders.length,
       pending: allOrders.filter((o) => o.status === OrderStatus.PENDING).length,
-      confirmed: allOrders.filter((o) => o.status === OrderStatus.CONFIRMED).length,
-      preparing: allOrders.filter((o) => o.status === OrderStatus.PREPARING).length,
-      readyForPickup: allOrders.filter((o) => o.status === OrderStatus.READY_FOR_PICKUP).length,
-      outForDelivery: allOrders.filter((o) => o.status === OrderStatus.OUT_FOR_DELIVERY).length,
-      delivered: allOrders.filter((o) => o.status === OrderStatus.DELIVERED).length,
-      cancelled: allOrders.filter((o) => o.status === OrderStatus.CANCELLED).length,
+      confirmed: allOrders.filter((o) => o.status === OrderStatus.CONFIRMED)
+        .length,
+      preparing: allOrders.filter((o) => o.status === OrderStatus.PREPARING)
+        .length,
+      readyForPickup: allOrders.filter(
+        (o) => o.status === OrderStatus.READY_FOR_PICKUP,
+      ).length,
+      outForDelivery: allOrders.filter(
+        (o) => o.status === OrderStatus.OUT_FOR_DELIVERY,
+      ).length,
+      delivered: allOrders.filter((o) => o.status === OrderStatus.DELIVERED)
+        .length,
+      cancelled: allOrders.filter((o) => o.status === OrderStatus.CANCELLED)
+        .length,
       totalRevenue: allOrders
         .filter((o) => o.status === OrderStatus.DELIVERED)
         .reduce(
           (sum, order) => sum + parseFloat(order.totalAmount.toString()),
-          0
+          0,
         ),
     };
 

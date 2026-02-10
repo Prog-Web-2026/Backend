@@ -10,6 +10,7 @@ import {
   ValidationError,
   NotFoundError,
   ForbiddenError,
+  ConflictError,
 } from "../config/ErrorHandler";
 
 export class ProductReviewService {
@@ -46,7 +47,7 @@ export class ProductReviewService {
         productId,
       );
     if (existingReview) {
-      throw new ValidationError("Você já avaliou este produto");
+      throw new ConflictError("Você já avaliou este produto");
     }
 
     const hasPurchased = await this.userHasPurchasedProduct(userId, productId);
@@ -529,7 +530,7 @@ export class ProductReviewService {
     }
 
     if (!review.isActive) {
-      throw new ValidationError("Esta avaliação não está mais disponível");
+      throw new ConflictError("Esta avaliação não está mais disponível");
     }
 
     return true;
@@ -555,13 +556,11 @@ export class ProductReviewService {
     }
 
     if (review.userId === userId) {
-      throw new ValidationError(
-        "Não é possível reportar sua própria avaliação",
-      );
+      throw new ConflictError("Não é possível reportar sua própria avaliação");
     }
 
     if (!review.isActive) {
-      throw new ValidationError("Esta avaliação já foi removida");
+      throw new ConflictError("Esta avaliação já foi removida");
     }
 
     return {

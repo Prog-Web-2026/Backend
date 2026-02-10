@@ -5,6 +5,7 @@ import {
   ValidationError,
   NotFoundError,
   ForbiddenError,
+  ConflictError,
 } from "../config/ErrorHandler";
 
 export class CartService {
@@ -22,7 +23,7 @@ export class CartService {
     }
 
     if (product.stock < quantity) {
-      throw new ValidationError(
+      throw new ConflictError(
         `Estoque insuficiente. Disponível: ${product.stock}`,
       );
     }
@@ -36,7 +37,7 @@ export class CartService {
       const newQuantity = existingItem.quantity + quantity;
 
       if (product.stock < newQuantity) {
-        throw new ValidationError(
+        throw new ConflictError(
           `Estoque insuficiente para adicionar mais unidades. Disponível: ${product.stock}`,
         );
       }
@@ -129,7 +130,7 @@ export class CartService {
       const product = cartItem.product!;
 
       if (!product.isActive || product.stock < cartItem.quantity) {
-        throw new ValidationError(
+        throw new ConflictError(
           !product.isActive ? "Produto indisponível" : "Estoque insuficiente",
         );
       }
@@ -177,7 +178,7 @@ export class CartService {
     }
 
     if (product.stock < quantity) {
-      throw new ValidationError(
+      throw new ConflictError(
         `Estoque insuficiente. Disponível: ${product.stock}`,
       );
     }
@@ -242,17 +243,17 @@ export class CartService {
       const product = item.product;
 
       if (!product) {
-        throw new ValidationError(
+        throw new NotFoundError(
           `Produto não encontrado para item ID: ${item.id}`,
         );
       }
 
       if (!product.isActive) {
-        throw new ValidationError(`Produto "${product.name}" indisponível`);
+        throw new ConflictError(`Produto "${product.name}" indisponível`);
       }
 
       if (product.stock < item.quantity) {
-        throw new ValidationError(
+        throw new ConflictError(
           `Estoque insuficiente para "${product.name}". Disponível: ${product.stock}, Solicitado: ${item.quantity}`,
         );
       }

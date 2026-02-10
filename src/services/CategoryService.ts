@@ -1,16 +1,15 @@
 import { CategoryRepository } from "../repository/CategoryRepository";
 import { ProductRepository } from "../repository/ProductRepository";
 import {
-  Category,
   CategoryAttributes,
   CategoryCreationAttributes,
 } from "../models/CategoryModel";
 import { UserRole } from "../models/UserModel";
 import {
   AppError,
-  ValidationError,
   NotFoundError,
   ForbiddenError,
+  ConflictError,
 } from "../config/ErrorHandler";
 
 export class CategoryService {
@@ -29,7 +28,7 @@ export class CategoryService {
       data.name,
     );
     if (existingCategory) {
-      throw new ValidationError("Categoria com este nome já existe");
+      throw new ConflictError("Categoria com este nome já existe");
     }
 
     return await this.categoryRepository.create(data);
@@ -134,7 +133,7 @@ export class CategoryService {
         data.name,
       );
       if (existingCategory && existingCategory.id !== id) {
-        throw new ValidationError("Categoria com este nome já existe");
+        throw new ConflictError("Categoria com este nome já existe");
       }
     }
 
@@ -164,7 +163,7 @@ export class CategoryService {
     });
 
     if (activeProducts.length > 0) {
-      throw new ValidationError(
+      throw new ConflictError(
         `Não é possível excluir categoria com produtos ativos. 
         Existem ${activeProducts.length} produto(s) nesta categoria.`,
       );

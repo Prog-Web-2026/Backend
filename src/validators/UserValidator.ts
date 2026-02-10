@@ -17,25 +17,19 @@ export const updateUserSchema = Joi.object({
   role: Joi.string().valid("admin", "customer", "delivery").optional(),
 });
 
-export const updateAddressSchema: ObjectSchema = Joi.object({
-  street: Joi.string()
-    .required()
-    .messages({ "any.required": errorCodes.REQUIRED }),
-  number: Joi.string()
-    .required()
-    .messages({ "any.required": errorCodes.REQUIRED }),
-  neighborhood: Joi.string()
-    .required()
-    .messages({ "any.required": errorCodes.REQUIRED }),
-  city: Joi.string()
-    .required()
-    .messages({ "any.required": errorCodes.REQUIRED }),
-  state: Joi.string()
-    .required()
-    .messages({ "any.required": errorCodes.REQUIRED }),
+export const updateAddressSchema = Joi.object({
+  street: Joi.string().required().min(3).max(200),
+  number: Joi.string().required().min(1).max(10),
+  complement: Joi.string().optional().allow("").max(100),
+  neighborhood: Joi.string().required().min(2).max(100),
+  city: Joi.string().required().min(2).max(100),
+  state: Joi.string().required().length(2).uppercase(),
   zipCode: Joi.string()
     .required()
-    .messages({ "any.required": errorCodes.REQUIRED }),
+    .pattern(/^\d{5}-?\d{3}$/),
+  country: Joi.string().optional().allow("").default("Brasil").max(50),
+  latitude: Joi.number().min(-90).max(90).optional(),
+  longitude: Joi.number().min(-180).max(180).optional(),
 });
 
 export const addPaymentMethodSchema: ObjectSchema = Joi.object({

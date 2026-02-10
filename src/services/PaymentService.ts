@@ -1,6 +1,10 @@
 import { PaymentRepository } from "../repository/PaymentRepository";
 import { OrderRepository } from "../repository/OrderRepository";
-import { PaymentCreationAttributes, PaymentStatus, PaymentType } from "../models/PaymentModel";
+import {
+  PaymentCreationAttributes,
+  PaymentStatus,
+  PaymentType,
+} from "../models/PaymentModel";
 import { OrderStatus } from "../models/OrderModel";
 import { UserRole } from "../models/UserModel";
 import {
@@ -8,6 +12,7 @@ import {
   ValidationError,
   NotFoundError,
   ForbiddenError,
+  ConflictError,
 } from "../config/ErrorHandler";
 
 export class PaymentService {
@@ -20,7 +25,7 @@ export class PaymentService {
     paymentData: {
       type: PaymentType;
     },
-    currentUserRole: UserRole
+    currentUserRole: UserRole,
   ) {
     if (currentUserRole !== UserRole.CUSTOMER) {
       throw new ForbiddenError("Apenas clientes podem processar pagamentos");
@@ -36,17 +41,15 @@ export class PaymentService {
       throw new ForbiddenError("Acesso negado");
     }
 
-    // Verifica se já existe pagamento para este pedido
     const existingPayment = await this.paymentRepository.findByOrderId(orderId);
     if (existingPayment && existingPayment.status === PaymentStatus.SUCCESS) {
-      throw new ValidationError("Este pedido já foi pago");
+      throw new ConflictError("Este pedido já foi pago");
     }
 
     if (order.status === OrderStatus.CANCELLED) {
-      throw new ValidationError("Este pedido foi cancelado");
+      throw new ConflictError("Este pedido foi cancelado");
     }
 
-    // Simula processamento de pagamento (sempre sucesso para versão acadêmica)
     const paymentAttributes: PaymentCreationAttributes = {
       orderId,
       userId,
@@ -59,7 +62,6 @@ export class PaymentService {
 
     const payment = await this.paymentRepository.create(paymentAttributes);
 
-    // Atualiza status do pedido para confirmado
     await this.orderRepository.update(orderId, {
       status: OrderStatus.CONFIRMED,
     });
@@ -89,7 +91,7 @@ export class PaymentService {
   async getPaymentByOrderId(
     orderId: number,
     userId: number,
-    currentUserRole: UserRole
+    currentUserRole: UserRole,
   ) {
     const payment = await this.paymentRepository.findByOrderId(orderId, {
       include: [{ association: "order" }],
@@ -120,14 +122,10 @@ export class PaymentService {
     });
   }
 
-  async refundPayment(
-    paymentId: number,
-    currentUserRole: UserRole,
-    reason?: string
-  ) {
+  async refundPayment(paymentId: number, currentUserRole: UserRole) {
     if (currentUserRole !== UserRole.ADMIN) {
       throw new ForbiddenError(
-        "Apenas administradores podem estornar pagamentos"
+        "Apenas administradores podem estornar pagamentos",
       );
     }
 
@@ -141,7 +139,7 @@ export class PaymentService {
 
     if (payment.status !== PaymentStatus.SUCCESS) {
       throw new ValidationError(
-        "Apenas pagamentos com sucesso podem ser estornados"
+        "Apenas pagamentos com sucesso podem ser estornados",
       );
     }
 
@@ -153,7 +151,6 @@ export class PaymentService {
       throw new AppError("Erro ao estornar pagamento", 500);
     }
 
-    // Cancela o pedido
     await this.orderRepository.update(payment.orderId, {
       status: OrderStatus.CANCELLED,
     });
