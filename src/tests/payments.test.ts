@@ -38,13 +38,6 @@ describe("Payment Controller E2E Tests", () => {
       .set("Authorization", `Bearer ${customerToken}`)
       .send({
         type: "credit_card",
-        cardData: {
-          cardHolderName: "TESTE TESTE",
-          cardNumber: "4111111111111111",
-          cardExpiryMonth: 12,
-          cardExpiryYear: 2030,
-          cardCvv: "123",
-        },
       });
 
     paymentId = paymentResponse.body.payment.id;
@@ -52,8 +45,10 @@ describe("Payment Controller E2E Tests", () => {
 
   afterEach(async () => {
     const Cart = (await import("../models/CartModel")).Cart;
+    const OrderItem = (await import("../models/OrderItemModel")).OrderItem;
     await Cart.destroy({ where: { userId: global.testCustomer.id } });
     await Payment.destroy({ where: {} });
+    await OrderItem.destroy({ where: {} });
     await Order.destroy({ where: {} });
   });
 
@@ -64,9 +59,9 @@ describe("Payment Controller E2E Tests", () => {
         .set("Authorization", `Bearer ${customerToken}`);
 
       expect(response.status).toBe(200);
-      expect(response.body.id).toBe(paymentId);
-      expect(response.body.orderId).toBe(orderId);
-      expect(response.body.status).toBe("success");
+      expect(response.body.payment.id).toBe(paymentId);
+      expect(response.body.payment.orderId).toBe(orderId);
+      expect(response.body.payment.status).toBe("success");
     });
 
     it("admin deve ver qualquer pagamento", async () => {
@@ -75,7 +70,7 @@ describe("Payment Controller E2E Tests", () => {
         .set("Authorization", `Bearer ${adminToken}`);
 
       expect(response.status).toBe(200);
-      expect(response.body.id).toBe(paymentId);
+      expect(response.body.payment.id).toBe(paymentId);
     });
 
     it("cliente não deve ver pagamento de outro cliente", async () => {
@@ -86,6 +81,16 @@ describe("Payment Controller E2E Tests", () => {
         password: await global.authService.hashPassword("senha123"),
         role: UserRole.CUSTOMER,
         isActive: true,
+        address: {
+          street: "Rua Teste",
+          number: "123",
+          neighborhood: "Bairro Teste",
+          city: "Cidade Teste",
+          state: "TS",
+          zipCode: "12345678",
+          latitude: -23.5505,
+          longitude: -46.6333,
+        },
       });
 
       const anotherToken = await getAuthToken(anotherCustomer);
@@ -120,6 +125,17 @@ describe("Payment Controller E2E Tests", () => {
 
       expect(response.status).toBe(403);
 
+      // Cleanup: remove user's related data
+      const Cart = (await import("../models/CartModel")).Cart;
+      const OrderItem = (await import("../models/OrderItemModel")).OrderItem;
+      const userOrders = await Order.findAll({ where: { userId: anotherCustomer.id } });
+      const orderIds = userOrders.map(o => o.id);
+      await Cart.destroy({ where: { userId: anotherCustomer.id } });
+      await Payment.destroy({ where: { userId: anotherCustomer.id } });
+      if (orderIds.length > 0) {
+        await OrderItem.destroy({ where: { orderId: orderIds } });
+      }
+      await Order.destroy({ where: { userId: anotherCustomer.id } });
       await anotherCustomer.destroy();
     });
   });
@@ -131,7 +147,7 @@ describe("Payment Controller E2E Tests", () => {
         .set("Authorization", `Bearer ${customerToken}`);
 
       expect(response.status).toBe(200);
-      expect(response.body.orderId).toBe(orderId);
+      expect(response.body.payment.orderId).toBe(orderId);
     });
 
     it("deve retornar 404 para pedido sem pagamento", async () => {
@@ -160,32 +176,24 @@ describe("Payment Controller E2E Tests", () => {
     });
   });
 
-  describe("GET /payments/user", () => {
+  describe("GET /payments/my-payments", () => {
     it("cliente deve ver seus próprios pagamentos", async () => {
       const response = await request(app)
-        .get("/payments/user")
+        .get("/payments/my-payments")
         .set("Authorization", `Bearer ${customerToken}`);
 
       expect(response.status).toBe(200);
-      expect(Array.isArray(response.body)).toBe(true);
-      expect(response.body.length).toBeGreaterThan(0);
-      expect(response.body[0].userId).toBe(global.testCustomer.id);
-    });
-
-    it("admin deve ver todos os pagamentos", async () => {
-      const response = await request(app)
-        .get("/payments/user")
-        .set("Authorization", `Bearer ${adminToken}`);
-
-      expect(response.status).toBe(200);
-      expect(Array.isArray(response.body)).toBe(true);
+      expect(response.body.payments).toBeDefined();
+      expect(Array.isArray(response.body.payments)).toBe(true);
+      expect(response.body.payments.length).toBeGreaterThan(0);
+      expect(response.body.payments[0].userId).toBe(global.testCustomer.id);
     });
 
     it("entregador não deve ver pagamentos", async () => {
       const deliveryToken = await getAuthToken(global.testDelivery);
 
       const response = await request(app)
-        .get("/payments/user")
+        .get("/payments/my-payments")
         .set("Authorization", `Bearer ${deliveryToken}`);
 
       expect(response.status).toBe(403);
@@ -202,8 +210,7 @@ describe("Payment Controller E2E Tests", () => {
         });
 
       expect(response.status).toBe(200);
-      expect(response.body.status).toBe("refunded");
-      expect(response.body).toHaveProperty("refundedAt");
+      expect(response.body.payment.status).toBe("refunded");
     });
 
     it("não deve estornar pagamento já estornado", async () => {
@@ -233,102 +240,6 @@ describe("Payment Controller E2E Tests", () => {
         });
 
       expect(response.status).toBe(403);
-    });
-  });
-
-  describe("DELETE /payments/:id/cancel", () => {
-    it("cliente deve cancelar pagamento pendente", async () => {
-      const item = await request(app)
-        .post("/cart")
-        .set("Authorization", `Bearer ${customerToken}`)
-        .send({
-          productId: global.testProduct2.id,
-          quantity: 1,
-        });
-
-      const orderRes = await request(app)
-        .post("/orders")
-        .set("Authorization", `Bearer ${customerToken}`)
-        .send({
-          selectedCartItemIds: [item.body.cartItem.id],
-        });
-
-      const newOrderId = orderRes.body.order.id;
-
-      const paymentRes = await request(app)
-        .post(`/orders/${newOrderId}/payment`)
-        .set("Authorization", `Bearer ${customerToken}`)
-        .send({
-          type: "boleto",
-        });
-
-      const pendingPaymentId = paymentRes.body.payment.id;
-
-      const PaymentModel = (await import("../models/PaymentModel")).Payment;
-      await PaymentModel.update(
-        { status: PaymentStatus.PENDING },
-        { where: { id: pendingPaymentId } },
-      );
-
-      const response = await request(app)
-        .delete(`/payments/${pendingPaymentId}/cancel`)
-        .set("Authorization", `Bearer ${customerToken}`);
-
-      expect(response.status).toBe(200);
-      expect(response.body.status).toBe("cancelled");
-    });
-
-    it("não deve cancelar pagamento já processado", async () => {
-      const response = await request(app)
-        .delete(`/payments/${paymentId}/cancel`)
-        .set("Authorization", `Bearer ${customerToken}`);
-
-      expect(response.status).toBe(400);
-    });
-
-    it("admin deve cancelar pagamento de qualquer usuário", async () => {
-      const User = (await import("../models/UserModel")).User;
-      const anotherCustomer = await User.create({
-        name: "Cliente Cancelamento",
-        email: "cancelamento@example.com",
-        password: await global.authService.hashPassword("senha123"),
-        role: UserRole.CUSTOMER,
-        isActive: true,
-      });
-
-      const anotherToken = await getAuthToken(anotherCustomer);
-
-      const item = await request(app)
-        .post("/cart")
-        .set("Authorization", `Bearer ${anotherToken}`)
-        .send({
-          productId: global.testProduct1.id,
-          quantity: 1,
-        });
-
-      const orderRes = await request(app)
-        .post("/orders")
-        .set("Authorization", `Bearer ${anotherToken}`)
-        .send({
-          selectedCartItemIds: [item.body.cartItem.id],
-        });
-
-      const paymentRes = await request(app)
-        .post(`/orders/${orderRes.body.order.id}/payment`)
-        .set("Authorization", `Bearer ${anotherToken}`)
-        .send({
-          type: "boleto",
-        });
-
-      const pendingPaymentId = paymentRes.body.payment.id;
-
-      const response = await request(app)
-        .delete(`/payments/${pendingPaymentId}/cancel`)
-        .set("Authorization", `Bearer ${adminToken}`);
-
-      expect(response.status).toBe(200);
-
-      await anotherCustomer.destroy();
     });
   });
 });

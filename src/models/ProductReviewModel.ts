@@ -9,16 +9,17 @@ export interface ProductReviewAttributes {
   productId: number;
   rating: number;
   comment: string | null;
+  imageUrl: string | null;
   isActive: boolean;
   createdAt?: Date;
   updatedAt?: Date;
-  imageUrl: string | null;
 }
 
-export interface ProductReviewCreationAttributes extends Optional<
-  ProductReviewAttributes,
-  "id" | "isActive" | "createdAt" | "updatedAt" | "comment" | "imageUrl"
-> {}
+export interface ProductReviewCreationAttributes
+  extends Optional<
+    ProductReviewAttributes,
+    "id" | "isActive" | "createdAt" | "updatedAt" | "comment" | "imageUrl"
+  > {}
 
 export class ProductReview
   extends Model<ProductReviewAttributes, ProductReviewCreationAttributes>
@@ -29,12 +30,12 @@ export class ProductReview
   public productId!: number;
   public rating!: number;
   public comment!: string | null;
-  public isActive!: boolean;
   public imageUrl!: string | null;
-
+  public isActive!: boolean;
   public readonly createdAt!: Date;
   public readonly updatedAt!: Date;
 
+  // Associations
   public readonly user?: User;
   public readonly product?: Product;
 }
@@ -74,14 +75,14 @@ ProductReview.init(
       type: DataTypes.TEXT,
       allowNull: true,
     },
+    imageUrl: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
     isActive: {
       type: DataTypes.BOOLEAN,
       allowNull: false,
       defaultValue: true,
-    },
-    imageUrl: {
-      type: DataTypes.STRING,
-      allowNull: true,
     },
   },
   {
@@ -94,9 +95,10 @@ ProductReview.init(
         fields: ["userId", "productId"],
       },
     ],
-  },
+  }
 );
 
+// Associations
 ProductReview.belongsTo(User, { foreignKey: "userId", as: "user" });
 ProductReview.belongsTo(Product, { foreignKey: "productId", as: "product" });
 User.hasMany(ProductReview, { foreignKey: "userId", as: "reviews" });

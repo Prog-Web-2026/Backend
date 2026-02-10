@@ -1,15 +1,12 @@
 import dotenv from "dotenv";
-import sequelize from "./config/database";
-import { app } from "./app";
-
-import { associatePayment } from "./models/PaymentModel";
-import { associateOrder } from "./models/OrderModel";
-import { seedAdmin } from "./config/configAdmin";
-
 dotenv.config();
 
-associatePayment();
-associateOrder();
+// Importa todos os models com associações na ordem correta
+import "./models/Associations";
+
+import sequelize from "./config/database";
+import { app } from "./app";
+import { seedAdmin } from "./config/configAdmin";
 
 const PORT = process.env.PORT || 3000;
 

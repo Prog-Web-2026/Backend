@@ -10,26 +10,18 @@ export interface ProductAttributes {
   stock: number;
   categoryId: number;
   imageUrl?: string;
-  weight?: number;
-  dimensions?: string;
   isActive: boolean;
-
   averageRating: number;
   reviewCount: number;
-
   createdAt?: Date;
   updatedAt?: Date;
 }
 
-export interface ProductCreationAttributes extends Optional<
-  ProductAttributes,
-  | "id"
-  | "isActive"
-  | "averageRating"
-  | "reviewCount"
-  | "createdAt"
-  | "updatedAt"
-> {}
+export interface ProductCreationAttributes
+  extends Optional<
+    ProductAttributes,
+    "id" | "isActive" | "averageRating" | "reviewCount" | "createdAt" | "updatedAt"
+  > {}
 
 export class Product
   extends Model<ProductAttributes, ProductCreationAttributes>
@@ -42,17 +34,17 @@ export class Product
   public stock!: number;
   public categoryId!: number;
   public imageUrl?: string;
-  public weight?: number;
-  public dimensions?: string;
   public isActive!: boolean;
-
   public averageRating!: number;
   public reviewCount!: number;
-
   public readonly createdAt!: Date;
   public readonly updatedAt!: Date;
 
+  // Associations
   public readonly category?: Category;
+  public readonly reviews?: any[];
+  public readonly orderItems?: any[];
+  public readonly inCarts?: any[];
 }
 
 Product.init(
@@ -100,17 +92,6 @@ Product.init(
       type: DataTypes.STRING,
       allowNull: true,
     },
-    weight: {
-      type: DataTypes.DECIMAL(6, 2),
-      allowNull: true,
-      validate: {
-        min: 0,
-      },
-    },
-    dimensions: {
-      type: DataTypes.STRING,
-      allowNull: true,
-    },
     isActive: {
       type: DataTypes.BOOLEAN,
       allowNull: false,
@@ -138,7 +119,9 @@ Product.init(
     sequelize,
     tableName: "products",
     timestamps: true,
-  },
+  }
 );
 
+// Associations
 Product.belongsTo(Category, { foreignKey: "categoryId", as: "category" });
+Category.hasMany(Product, { foreignKey: "categoryId", as: "products" });

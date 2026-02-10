@@ -2,6 +2,16 @@ import request from "supertest";
 import { app } from "../app";
 import { UserRole } from "../models/UserModel";
 
+// Mock GeolocationService to avoid external API calls
+jest.mock("../services/GeolocationService", () => ({
+  GeolocationService: jest.fn().mockImplementation(() => ({
+    geocodeAddress: jest.fn().mockResolvedValue({
+      latitude: -23.5505,
+      longitude: -46.6333,
+    }),
+  })),
+}));
+
 describe("User Controller E2E Tests", () => {
   describe("GET /users (Admin only)", () => {
     it("should list all users when user is admin", async () => {
@@ -220,75 +230,4 @@ describe("User Controller E2E Tests", () => {
     });
   });
 
-  describe("Payment Methods", () => {
-    describe("GET /users/me/payment-methods", () => {
-      it("should list payment methods when user is customer", async () => {
-        const response = await request(app)
-          .get("/users/me/payment-methods")
-          .set(
-            "Authorization",
-            `Bearer ${await getAuthToken(global.testCustomer)}`,
-          );
-
-        expect(response.status).toBe(200);
-        expect(Array.isArray(response.body)).toBe(true);
-      });
-
-      it("should return 403 when non-customer tries to view payment methods", async () => {
-        const response = await request(app)
-          .get("/users/me/payment-methods")
-          .set(
-            "Authorization",
-            `Bearer ${await getAuthToken(global.testDelivery)}`,
-          );
-
-        expect(response.status).toBe(403);
-      });
-    });
-
-    describe("POST /users/me/payment-methods", () => {
-      it("should add credit card when data is valid", async () => {
-        const response = await request(app)
-          .post("/users/me/payment-methods")
-          .set(
-            "Authorization",
-            `Bearer ${await getAuthToken(global.testCustomer)}`,
-          )
-          .send({
-            type: "credit_card",
-            cardHolderName: "TESTE TESTE",
-            cardNumber: "4111111111111111",
-            cardExpiryMonth: 12,
-            cardExpiryYear: 2030,
-            cardCvv: "123",
-            isDefault: true,
-          });
-
-        expect(response.status).toBe(201);
-        expect(response.body.paymentMethod.type).toBe("credit_card");
-        expect(response.body.paymentMethod.cardLastFour).toBe("1111");
-      });
-
-      it("should add debit card when data is valid", async () => {
-        const response = await request(app)
-          .post("/users/me/payment-methods")
-          .set(
-            "Authorization",
-            `Bearer ${await getAuthToken(global.testCustomer)}`,
-          )
-          .send({
-            type: "debit_card",
-            cardHolderName: "TESTE DEBITO",
-            cardNumber: "5555555555554444",
-            cardExpiryMonth: 6,
-            cardExpiryYear: 2030,
-            cardCvv: "456",
-            isDefault: false,
-          });
-
-        expect(response.status).toBe(201);
-        expect(response.body.paymentMethod.type).toBe("debit_card");
-      });
-    });
-  });
 });

@@ -25,6 +25,16 @@ describe("Order Controller E2E Tests - Fluxo Completo", () => {
   });
 
   beforeEach(async () => {
+    // Reset product stock
+    await Product.update(
+      { stock: originalStockProduct1 },
+      { where: { id: global.testProduct1.id } }
+    );
+    await Product.update(
+      { stock: originalStockProduct2 },
+      { where: { id: global.testProduct2.id } }
+    );
+
     const item1 = await request(app)
       .post("/cart")
       .set("Authorization", `Bearer ${customerToken}`)
@@ -46,8 +56,13 @@ describe("Order Controller E2E Tests - Fluxo Completo", () => {
 
   afterEach(async () => {
     const Cart = (await import("../models/CartModel")).Cart;
+    const Payment = (await import("../models/PaymentModel")).Payment;
+    const OrderItem = (await import("../models/OrderItemModel")).OrderItem;
+
     await Cart.destroy({ where: { userId: global.testCustomer.id } });
-    await Order.destroy({ where: { userId: global.testCustomer.id } });
+    await Payment.destroy({ where: {} });
+    await OrderItem.destroy({ where: {} });
+    await Order.destroy({ where: {} });
     cartItemIds = [];
   });
 
@@ -84,14 +99,6 @@ describe("Order Controller E2E Tests - Fluxo Completo", () => {
         .set("Authorization", `Bearer ${customerToken}`)
         .send({
           type: "credit_card",
-          cardData: {
-            cardHolderName: "TESTE TESTE",
-            cardNumber: "4111111111111111",
-            cardExpiryMonth: 12,
-            cardExpiryYear: 2030,
-            cardCvv: "123",
-          },
-          installments: 1,
         });
 
       expect(paymentResponse.status).toBe(200);
@@ -102,7 +109,6 @@ describe("Order Controller E2E Tests - Fluxo Completo", () => {
         .set("Authorization", `Bearer ${customerToken}`);
 
       expect(orderAfterPayment.body.order.status).toBe("confirmed");
-      expect(orderAfterPayment.body.order.paymentStatus).toBe("success");
 
       const preparingResponse = await request(app)
         .patch(`/orders/${orderId}/status`)
@@ -118,14 +124,14 @@ describe("Order Controller E2E Tests - Fluxo Completo", () => {
         .patch(`/orders/${orderId}/status`)
         .set("Authorization", `Bearer ${adminToken}`)
         .send({
-          status: "ready_for_delivery",
+          status: "ready_for_pickup",
         });
 
       expect(readyResponse.status).toBe(200);
-      expect(readyResponse.body.order.status).toBe("ready_for_delivery");
+      expect(readyResponse.body.order.status).toBe("ready_for_pickup");
 
       const userOrdersResponse = await request(app)
-        .get("/orders")
+        .get("/orders/my-orders")
         .set("Authorization", `Bearer ${customerToken}`);
 
       expect(userOrdersResponse.status).toBe(200);
@@ -181,13 +187,6 @@ describe("Order Controller E2E Tests - Fluxo Completo", () => {
         .set("Authorization", `Bearer ${customerToken}`)
         .send({
           type: "credit_card",
-          cardData: {
-            cardHolderName: "TESTE TESTE",
-            cardNumber: "4111111111111111",
-            cardExpiryMonth: 12,
-            cardExpiryYear: 2030,
-            cardCvv: "123",
-          },
         });
 
       await request(app)
@@ -252,6 +251,16 @@ describe("Order Controller E2E Tests - Fluxo Completo", () => {
         password: await global.authService.hashPassword("senha123"),
         role: UserRole.CUSTOMER,
         isActive: true,
+        address: {
+          street: "Rua Teste",
+          number: "123",
+          neighborhood: "Bairro Teste",
+          city: "Cidade Teste",
+          state: "TS",
+          zipCode: "12345678",
+          latitude: -23.5505,
+          longitude: -46.6333,
+        },
       });
 
       const anotherToken = await getAuthToken(anotherCustomer);
@@ -279,6 +288,14 @@ describe("Order Controller E2E Tests - Fluxo Completo", () => {
 
       expect(response.status).toBe(403);
 
+      // Cleanup: remove user's cart, orderItem, order, then user
+      const Cart = (await import("../models/CartModel")).Cart;
+      const OrderItem = (await import("../models/OrderItemModel")).OrderItem;
+      const Payment = (await import("../models/PaymentModel")).Payment;
+      await Cart.destroy({ where: { userId: anotherCustomer.id } });
+      await Payment.destroy({ where: { userId: anotherCustomer.id } });
+      await OrderItem.destroy({ where: {} }).catch(() => {});
+      await Order.destroy({ where: { userId: anotherCustomer.id } });
       await anotherCustomer.destroy();
     });
   });
@@ -303,10 +320,10 @@ describe("Order Controller E2E Tests - Fluxo Completo", () => {
 
       expect(response.status).toBe(200);
       expect(response.body.payment.type).toBe("pix");
-      expect(response.body.payment).toHaveProperty("pixCode");
+      expect(response.body.payment.status).toBe("success");
     });
 
-    it("deve processar pagamento com boleto", async () => {
+    it("deve processar pagamento com cartão de débito", async () => {
       const createResponse = await request(app)
         .post("/orders")
         .set("Authorization", `Bearer ${customerToken}`)
@@ -320,12 +337,12 @@ describe("Order Controller E2E Tests - Fluxo Completo", () => {
         .post(`/orders/${orderId}/payment`)
         .set("Authorization", `Bearer ${customerToken}`)
         .send({
-          type: "boleto",
+          type: "debit_card",
         });
 
       expect(response.status).toBe(200);
-      expect(response.body.payment.type).toBe("boleto");
-      expect(response.body.payment).toHaveProperty("boletoNumber");
+      expect(response.body.payment.type).toBe("debit_card");
+      expect(response.body.payment.status).toBe("success");
     });
 
     it("não deve processar pagamento de pedido já pago", async () => {
@@ -343,13 +360,6 @@ describe("Order Controller E2E Tests - Fluxo Completo", () => {
         .set("Authorization", `Bearer ${customerToken}`)
         .send({
           type: "credit_card",
-          cardData: {
-            cardHolderName: "TESTE TESTE",
-            cardNumber: "4111111111111111",
-            cardExpiryMonth: 12,
-            cardExpiryYear: 2030,
-            cardCvv: "123",
-          },
         });
 
       const response = await request(app)
@@ -364,27 +374,16 @@ describe("Order Controller E2E Tests - Fluxo Completo", () => {
   });
 
   describe("Delivery Flow", () => {
-    it("entregador deve ver atribuições pendentes", async () => {
+    it("entregador deve ver pedidos disponíveis para entrega", async () => {
       const response = await request(app)
-        .get("/orders/delivery/pending")
+        .get("/orders/delivery/available")
         .set("Authorization", `Bearer ${deliveryToken}`);
 
       expect(response.status).toBe(200);
-      expect(Array.isArray(response.body.assignments)).toBe(true);
+      expect(Array.isArray(response.body.orders)).toBe(true);
     });
 
-    it("entregador não deve ver pedidos de outros entregadores", async () => {
-      const User = (await import("../models/UserModel")).User;
-      const anotherDelivery = await User.create({
-        name: "Outro Entregador",
-        email: "outro.entregador@example.com",
-        password: await global.authService.hashPassword("senha123"),
-        role: UserRole.DELIVERY,
-        isActive: true,
-      });
-
-      const anotherDeliveryToken = await getAuthToken(anotherDelivery);
-
+    it("entregador deve aceitar pedido pronto para entrega", async () => {
       const createResponse = await request(app)
         .post("/orders")
         .set("Authorization", `Bearer ${customerToken}`)
@@ -394,27 +393,72 @@ describe("Order Controller E2E Tests - Fluxo Completo", () => {
 
       orderId = createResponse.body.order.id;
 
+      // Pagar o pedido
       await request(app)
         .post(`/orders/${orderId}/payment`)
         .set("Authorization", `Bearer ${customerToken}`)
         .send({
           type: "credit_card",
-          cardData: {
-            cardHolderName: "TESTE TESTE",
-            cardNumber: "4111111111111111",
-            cardExpiryMonth: 12,
-            cardExpiryYear: 2030,
-            cardCvv: "123",
-          },
         });
 
-      const response = await request(app)
-        .get("/orders/delivery/pending")
-        .set("Authorization", `Bearer ${anotherDeliveryToken}`);
+      // Admin prepara e marca pronto
+      await request(app)
+        .patch(`/orders/${orderId}/status`)
+        .set("Authorization", `Bearer ${adminToken}`)
+        .send({ status: "preparing" });
 
-      expect(response.status).toBe(200);
+      await request(app)
+        .patch(`/orders/${orderId}/status`)
+        .set("Authorization", `Bearer ${adminToken}`)
+        .send({ status: "ready_for_pickup" });
 
-      await anotherDelivery.destroy();
+      // Entregador aceita
+      const acceptResponse = await request(app)
+        .post(`/orders/delivery/${orderId}/accept`)
+        .set("Authorization", `Bearer ${deliveryToken}`);
+
+      expect(acceptResponse.status).toBe(200);
+      expect(acceptResponse.body.order.status).toBe("out_for_delivery");
+      expect(acceptResponse.body.order.deliveryId).toBe(global.testDelivery.id);
+    });
+
+    it("entregador deve marcar pedido como entregue", async () => {
+      const createResponse = await request(app)
+        .post("/orders")
+        .set("Authorization", `Bearer ${customerToken}`)
+        .send({
+          selectedCartItemIds: cartItemIds,
+        });
+
+      orderId = createResponse.body.order.id;
+
+      // Pagar, preparar, marcar pronto e aceitar entrega
+      await request(app)
+        .post(`/orders/${orderId}/payment`)
+        .set("Authorization", `Bearer ${customerToken}`)
+        .send({ type: "credit_card" });
+
+      await request(app)
+        .patch(`/orders/${orderId}/status`)
+        .set("Authorization", `Bearer ${adminToken}`)
+        .send({ status: "preparing" });
+
+      await request(app)
+        .patch(`/orders/${orderId}/status`)
+        .set("Authorization", `Bearer ${adminToken}`)
+        .send({ status: "ready_for_pickup" });
+
+      await request(app)
+        .post(`/orders/delivery/${orderId}/accept`)
+        .set("Authorization", `Bearer ${deliveryToken}`);
+
+      // Marcar como entregue
+      const deliveredResponse = await request(app)
+        .patch(`/orders/delivery/${orderId}/delivered`)
+        .set("Authorization", `Bearer ${deliveryToken}`);
+
+      expect(deliveredResponse.status).toBe(200);
+      expect(deliveredResponse.body.order.status).toBe("delivered");
     });
   });
 });

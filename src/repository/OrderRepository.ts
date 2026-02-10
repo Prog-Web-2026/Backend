@@ -5,7 +5,6 @@ import {
   OrderCreationAttributes,
   OrderStatus,
 } from "../models/OrderModel";
-import { PaymentStatus } from "../models/PaymentModel";
 
 export class OrderRepository {
   async create(data: OrderCreationAttributes): Promise<Order> {
@@ -19,9 +18,10 @@ export class OrderRepository {
   async findById(id: number, options?: FindOptions): Promise<Order | null> {
     return await Order.findByPk(id, {
       include: [
-        { association: "user" },
+        { association: "customer" },
         { association: "deliveryPerson" },
         { association: "items", include: [{ association: "product" }] },
+        { association: "payment" },
       ],
       ...options,
     });
@@ -40,7 +40,7 @@ export class OrderRepository {
 
   async findByDeliveryId(
     deliveryId: number,
-    options?: FindOptions,
+    options?: FindOptions
   ): Promise<Order[]> {
     return await Order.findAll({
       where: { deliveryId },
@@ -50,7 +50,7 @@ export class OrderRepository {
 
   async findByStatus(
     status: OrderStatus,
-    options?: FindOptions,
+    options?: FindOptions
   ): Promise<Order[]> {
     return await Order.findAll({
       where: { status },
@@ -61,11 +61,16 @@ export class OrderRepository {
   async findOrdersReadyForDelivery(): Promise<Order[]> {
     return await Order.findAll({
       where: {
-        status: OrderStatus.READY_FOR_DELIVERY,
+        status: OrderStatus.READY_FOR_PICKUP,
         deliveryId: {
           [Op.is]: null,
         },
       },
+      include: [
+        { association: "customer", attributes: ["id", "name", "phone", "address"] },
+        { association: "items", include: [{ association: "product" }] },
+      ],
+      order: [["createdAt", "ASC"]],
     });
   }
 
@@ -73,18 +78,6 @@ export class OrderRepository {
     const [affectedCount] = await Order.update(data, {
       where: { id },
     });
-
-    return affectedCount;
-  }
-
-  async updatePaymentStatus(
-    id: number,
-    paymentStatus: PaymentStatus,
-  ): Promise<number> {
-    const [affectedCount] = await Order.update(
-      { paymentStatus },
-      { where: { id } },
-    );
 
     return affectedCount;
   }

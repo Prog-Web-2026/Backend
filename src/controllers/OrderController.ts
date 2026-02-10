@@ -14,7 +14,7 @@ export class OrderController {
   async createOrderFromSelectedItems(
     req: Request,
     res: Response,
-    next: NextFunction,
+    next: NextFunction
   ) {
     try {
       const userId = req.user?.id as number;
@@ -31,7 +31,7 @@ export class OrderController {
         userId,
         selectedCartItemIds,
         notes,
-        currentUserRole,
+        currentUserRole
       );
 
       res.status(201).json({
@@ -52,12 +52,10 @@ export class OrderController {
       const order = await orderService.getOrderById(
         orderId,
         userId,
-        currentUserRole,
+        currentUserRole
       );
 
-      res.status(200).json({
-        order,
-      });
+      res.status(200).json({ order });
     } catch (error) {
       next(error);
     }
@@ -77,12 +75,10 @@ export class OrderController {
       const orders = await orderService.getUserOrders(
         userId,
         currentUserRole,
-        filters,
+        filters
       );
 
-      res.status(200).json({
-        orders,
-      });
+      res.status(200).json({ orders });
     } catch (error) {
       next(error);
     }
@@ -99,7 +95,7 @@ export class OrderController {
         orderId,
         status,
         userId,
-        currentUserRole,
+        currentUserRole
       );
 
       res.status(200).json({
@@ -120,7 +116,7 @@ export class OrderController {
       const order = await orderService.cancelOrder(
         orderId,
         userId,
-        currentUserRole,
+        currentUserRole
       );
 
       res.status(200).json({
@@ -143,7 +139,7 @@ export class OrderController {
         orderId,
         userId,
         paymentData,
-        currentUserRole,
+        currentUserRole
       );
 
       res.status(200).json({
@@ -162,60 +158,74 @@ export class OrderController {
 
       const stats = await orderService.getOrderStatistics(
         userId,
-        currentUserRole,
+        currentUserRole
+      );
+
+      res.status(200).json({ stats });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async getAvailableOrdersForDelivery(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ) {
+    try {
+      const currentUserRole = req.user?.role as UserRole;
+
+      const orders = await orderService.getAvailableOrdersForDelivery(
+        currentUserRole
+      );
+
+      res.status(200).json({ orders });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async acceptOrderForDelivery(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ) {
+    try {
+      const orderId = Number(req.params.id);
+      const deliveryId = req.user?.id as number;
+      const currentUserRole = req.user?.role as UserRole;
+
+      const order = await orderService.acceptOrderForDelivery(
+        orderId,
+        deliveryId,
+        currentUserRole
       );
 
       res.status(200).json({
-        stats,
+        message: "Pedido aceito para entrega",
+        order,
       });
     } catch (error) {
       next(error);
     }
   }
 
-  async respondToDeliveryAssignment(
-    req: Request,
-    res: Response,
-    next: NextFunction,
-  ) {
+  async markOrderAsDelivered(req: Request, res: Response, next: NextFunction) {
     try {
-      const assignmentId = Number(req.params.assignmentId);
-      const deliveryId = req.user?.id as number;
+      const orderId = Number(req.params.id);
+      const userId = req.user?.id as number;
       const currentUserRole = req.user?.role as UserRole;
-      const { accept } = req.body;
 
-      const result = await orderService.respondToDeliveryAssignment(
-        assignmentId,
-        deliveryId,
-        accept,
-        currentUserRole,
+      const order = await orderService.updateOrderStatus(
+        orderId,
+        "delivered" as any,
+        userId,
+        currentUserRole
       );
 
       res.status(200).json({
-        message: `Atribuição ${accept ? "aceita" : "rejeitada"}`,
-        ...result,
-      });
-    } catch (error) {
-      next(error);
-    }
-  }
-
-  async getPendingDeliveryAssignments(
-    req: Request,
-    res: Response,
-    next: NextFunction,
-  ) {
-    try {
-      const deliveryId = req.user?.id as number;
-      const currentUserRole = req.user?.role as UserRole;
-
-      const assignments = await orderService.getPendingDeliveryAssignments(
-        deliveryId,
-        currentUserRole,
-      );
-
-      res.status(200).json({
-        assignments,
+        message: "Pedido marcado como entregue",
+        order,
       });
     } catch (error) {
       next(error);
@@ -225,50 +235,64 @@ export class OrderController {
 
 const controller = new OrderController();
 
+// Rotas de cliente
 router.post(
   "/",
   customerMiddleware,
-  controller.createOrderFromSelectedItems.bind(controller),
+  controller.createOrderFromSelectedItems.bind(controller)
 );
 
-router.get("/:id", controller.getOrderById.bind(controller));
+router.get("/my-orders", controller.getUserOrders.bind(controller));
 
-router.get("/", customerMiddleware, controller.getUserOrders.bind(controller));
-
-router.patch(
-  "/:id/status",
-  adminMiddleware,
-  controller.updateOrderStatus.bind(controller),
+router.post(
+  "/:id/payment",
+  customerMiddleware,
+  controller.processOrderPayment.bind(controller)
 );
 
 router.patch(
   "/:id/cancel",
   customerMiddleware,
-  controller.cancelOrder.bind(controller),
+  controller.cancelOrder.bind(controller)
+);
+
+// Rotas de entregador
+router.get(
+  "/delivery/available",
+  deliveryMiddleware,
+  controller.getAvailableOrdersForDelivery.bind(controller)
 );
 
 router.post(
-  "/:id/payment",
-  customerMiddleware,
-  controller.processOrderPayment.bind(controller),
-);
-
-router.get(
-  "/stats",
-  adminMiddleware,
-  controller.getOrderStatistics.bind(controller),
+  "/delivery/:id/accept",
+  deliveryMiddleware,
+  controller.acceptOrderForDelivery.bind(controller)
 );
 
 router.patch(
-  "/delivery/:assignmentId/respond",
+  "/delivery/:id/delivered",
   deliveryMiddleware,
-  controller.respondToDeliveryAssignment.bind(controller),
+  controller.markOrderAsDelivered.bind(controller)
 );
 
 router.get(
-  "/delivery/pending",
+  "/delivery/my-deliveries",
   deliveryMiddleware,
-  controller.getPendingDeliveryAssignments.bind(controller),
+  controller.getUserOrders.bind(controller)
 );
+
+// Rotas de admin
+router.get("/stats", adminMiddleware, controller.getOrderStatistics.bind(controller));
+
+router.patch(
+  "/:id/status",
+  adminMiddleware,
+  controller.updateOrderStatus.bind(controller)
+);
+
+router.get("/all", adminMiddleware, controller.getUserOrders.bind(controller));
+
+// Rota comum
+router.get("/:id", controller.getOrderById.bind(controller));
 
 export { router as OrderRouter };

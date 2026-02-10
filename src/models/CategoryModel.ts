@@ -10,10 +10,8 @@ export interface CategoryAttributes {
   updatedAt?: Date;
 }
 
-export interface CategoryCreationAttributes extends Optional<
-  CategoryAttributes,
-  "id" | "isActive" | "createdAt" | "updatedAt"
-> {}
+export interface CategoryCreationAttributes
+  extends Optional<CategoryAttributes, "id" | "isActive" | "createdAt" | "updatedAt"> {}
 
 export class Category
   extends Model<CategoryAttributes, CategoryCreationAttributes>
@@ -25,6 +23,9 @@ export class Category
   public isActive!: boolean;
   public readonly createdAt!: Date;
   public readonly updatedAt!: Date;
+
+  // Associations
+  public readonly products?: any[];
 }
 
 Category.init(
@@ -56,5 +57,5 @@ Category.init(
     sequelize,
     tableName: "categories",
     timestamps: true,
-  },
+  }
 );

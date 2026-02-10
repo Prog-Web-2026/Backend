@@ -1,3 +1,6 @@
+// Importa todos os models na ordem correta
+import "../models/Associations";
+
 import sequelize from "../config/database";
 import { Category } from "../models/CategoryModel";
 import { Product } from "../models/ProductModel";
@@ -19,7 +22,7 @@ declare global {
 
 export const createTestUser = async (
   role: UserRole = UserRole.CUSTOMER,
-  email?: string,
+  email?: string
 ) => {
   return User.create({
     name: `Test ${role}`,
@@ -58,11 +61,11 @@ beforeAll(async () => {
   global.testAdmin = await createTestUser(UserRole.ADMIN, "admin@example.com");
   global.testCustomer = await createTestUser(
     UserRole.CUSTOMER,
-    "customer@example.com",
+    "customer@example.com"
   );
   global.testDelivery = await createTestUser(
     UserRole.DELIVERY,
-    "delivery@example.com",
+    "delivery@example.com"
   );
 
   global.testCategory = await Category.create({
@@ -95,14 +98,7 @@ afterAll(async () => {
 });
 
 afterEach(async () => {
-  const models = [
-    "Payment",
-    "Order",
-    "Cart",
-    "ProductReview",
-    "PaymentMethod",
-    "DeliveryAssignment",
-  ];
+  const models = ["Payment", "OrderItem", "Order", "Cart", "ProductReview"];
 
   for (const modelName of models) {
     const model = sequelize.models[modelName];

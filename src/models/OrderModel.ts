@@ -1,15 +1,13 @@
 import { Model, DataTypes, Optional } from "sequelize";
 import sequelize from "../config/database";
 import { User } from "./UserModel";
-import { OrderItem } from "./OrderItemModel";
-import { Payment, PaymentStatus } from "./PaymentModel";
 
 export enum OrderStatus {
   PENDING = "pending",
   CONFIRMED = "confirmed",
   PREPARING = "preparing",
-  READY_FOR_DELIVERY = "ready_for_delivery",
-  ON_THE_WAY = "on_the_way",
+  READY_FOR_PICKUP = "ready_for_pickup",
+  OUT_FOR_DELIVERY = "out_for_delivery",
   DELIVERED = "delivered",
   CANCELLED = "cancelled",
 }
@@ -20,9 +18,9 @@ export interface OrderAttributes {
   deliveryId: number | null;
   totalAmount: number;
   status: OrderStatus;
-  paymentStatus: PaymentStatus;
-  deliveryLatitude: number;
-  deliveryLongitude: number;
+  deliveryAddress: string;
+  deliveryLatitude?: number;
+  deliveryLongitude?: number;
   estimatedDeliveryTime?: Date;
   deliveredAt?: Date;
   notes?: string;
@@ -30,10 +28,11 @@ export interface OrderAttributes {
   updatedAt?: Date;
 }
 
-export interface OrderCreationAttributes extends Optional<
-  OrderAttributes,
-  "id" | "status" | "paymentStatus" | "deliveryId" | "createdAt" | "updatedAt"
-> {}
+export interface OrderCreationAttributes
+  extends Optional<
+    OrderAttributes,
+    "id" | "status" | "deliveryId" | "createdAt" | "updatedAt"
+  > {}
 
 export class Order
   extends Model<OrderAttributes, OrderCreationAttributes>
@@ -42,23 +41,22 @@ export class Order
   public id!: number;
   public userId!: number;
   public deliveryId!: number | null;
-  public paymentStatus!: PaymentStatus;
   public totalAmount!: number;
   public status!: OrderStatus;
-  public deliveryLatitude!: number;
-  public deliveryLongitude!: number;
+  public deliveryAddress!: string;
+  public deliveryLatitude?: number;
+  public deliveryLongitude?: number;
   public estimatedDeliveryTime?: Date;
   public deliveredAt?: Date;
   public notes?: string;
   public readonly createdAt!: Date;
   public readonly updatedAt!: Date;
 
+  // Associations
   public readonly customer?: User;
   public readonly deliveryPerson?: User;
-
-  public readonly items?: OrderItem[];
-
-  public readonly payment?: Payment;
+  public readonly items?: any[];
+  public readonly payment?: any;
 }
 
 Order.init(
@@ -96,9 +94,13 @@ Order.init(
       allowNull: false,
       defaultValue: OrderStatus.PENDING,
     },
+    deliveryAddress: {
+      type: DataTypes.TEXT,
+      allowNull: false,
+    },
     deliveryLatitude: {
       type: DataTypes.DECIMAL(10, 8),
-      allowNull: false,
+      allowNull: true,
       validate: {
         min: -90,
         max: 90,
@@ -106,7 +108,7 @@ Order.init(
     },
     deliveryLongitude: {
       type: DataTypes.DECIMAL(11, 8),
-      allowNull: false,
+      allowNull: true,
       validate: {
         min: -180,
         max: 180,
@@ -124,27 +126,15 @@ Order.init(
       type: DataTypes.TEXT,
       allowNull: true,
     },
-    paymentStatus: {
-      type: DataTypes.ENUM(...Object.values(PaymentStatus)),
-      allowNull: false,
-      defaultValue: PaymentStatus.PENDING,
-    },
   },
   {
     sequelize,
     tableName: "orders",
     timestamps: true,
-  },
+  }
 );
 
-Order.hasOne(Payment, { foreignKey: "orderId", as: "payment" });
-
-export const associateOrder = () => {
-  const { User } = require("./UserModel");
-  Order.belongsTo(User, { foreignKey: "userId", as: "customer" });
-  Order.belongsTo(User, {
-    foreignKey: "deliveryId",
-    as: "deliveryPerson",
-    constraints: false,
-  });
-};
+// Associations
+Order.belongsTo(User, { foreignKey: "userId", as: "customer" });
+Order.belongsTo(User, { foreignKey: "deliveryId", as: "deliveryPerson" });
+User.hasMany(Order, { foreignKey: "userId", as: "orders" });

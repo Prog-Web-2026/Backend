@@ -35,10 +35,8 @@ export interface UserAttributes {
   updatedAt?: Date;
 }
 
-export interface UserCreationAttributes extends Optional<
-  UserAttributes,
-  "id" | "isActive" | "createdAt" | "updatedAt"
-> {}
+export interface UserCreationAttributes
+  extends Optional<UserAttributes, "id" | "isActive" | "createdAt" | "updatedAt"> {}
 
 export class User
   extends Model<UserAttributes, UserCreationAttributes>
@@ -56,6 +54,12 @@ export class User
   public isActive!: boolean;
   public readonly createdAt!: Date;
   public readonly updatedAt!: Date;
+
+  // Associations
+  public readonly orders?: any[];
+  public readonly cartItems?: any[];
+  public readonly reviews?: any[];
+  public readonly payments?: any[];
 }
 
 User.init(
@@ -131,5 +135,5 @@ User.init(
         attributes: { include: ["password"] },
       },
     },
-  },
+  }
 );

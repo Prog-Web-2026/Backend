@@ -2,8 +2,6 @@ import { UserRepository } from "../repository/UserRepository";
 import { UserAttributes, UserRole, UserAddress } from "../models/UserModel";
 import { AuthService } from "./AuthService";
 import { GeolocationService } from "./GeolocationService";
-import { PaymentMethodService } from "./PaymentMethodService";
-import { PaymentMethodType } from "../models/PaymentMethodModel";
 import {
   AppError,
   ValidationError,
@@ -50,7 +48,7 @@ export class UserService {
     filters?: {
       role?: UserRole;
       isActive?: boolean;
-    },
+    }
   ) {
     if (!this.authService.isAdmin(currentUserRole)) {
       throw new ForbiddenError("Acesso negado");
@@ -70,7 +68,7 @@ export class UserService {
   async getUserById(
     id: number,
     currentUserId: number,
-    currentUserRole: UserRole,
+    currentUserRole: UserRole
   ) {
     const user = await this.userRepository.findById(id);
 
@@ -89,7 +87,7 @@ export class UserService {
     id: number,
     data: Partial<UserAttributes>,
     currentUserId: number,
-    currentUserRole: UserRole,
+    currentUserRole: UserRole
   ) {
     if (!this.authService.isAdmin(currentUserRole) && currentUserId !== id) {
       throw new ForbiddenError("Acesso negado");
@@ -123,7 +121,7 @@ export class UserService {
   async updateUserAddress(
     userId: number,
     address: UserAddress,
-    currentUserRole: UserRole,
+    currentUserRole: UserRole
   ) {
     if (!this.authService.isCustomer(currentUserRole)) {
       throw new ForbiddenError("Apenas clientes podem atualizar endereço");
@@ -153,7 +151,7 @@ export class UserService {
   async deleteUser(
     id: number,
     currentUserId: number,
-    currentUserRole: UserRole,
+    currentUserRole: UserRole
   ) {
     if (!this.authService.isAdmin(currentUserRole) && currentUserId !== id) {
       throw new ForbiddenError("Acesso negado");
@@ -171,7 +169,7 @@ export class UserService {
   async toggleUserStatus(
     id: number,
     currentUserRole: UserRole,
-    isActive: boolean,
+    isActive: boolean
   ) {
     if (!this.authService.isAdmin(currentUserRole)) {
       throw new ForbiddenError("Acesso negado");
@@ -199,7 +197,7 @@ export class UserService {
   async changePassword(
     userId: number,
     currentPassword: string,
-    newPassword: string,
+    newPassword: string
   ) {
     const user = await this.userRepository.findById(userId, {
       attributes: { include: ["password"] },
@@ -212,7 +210,7 @@ export class UserService {
     const authService = new AuthService();
     const isCurrentPasswordValid = await authService.comparePassword(
       currentPassword,
-      user.password,
+      user.password
     );
 
     if (!isCurrentPasswordValid) {
@@ -232,53 +230,5 @@ export class UserService {
     }
 
     return true;
-  }
-
-  async getUserPaymentMethods(userId: number, currentUserRole: UserRole) {
-    if (!this.authService.isCustomer(currentUserRole)) {
-      throw new ForbiddenError(
-        "Apenas clientes podem ver métodos de pagamento",
-      );
-    }
-
-    const paymentMethodService = new PaymentMethodService();
-    return await paymentMethodService.getUserPaymentMethods(
-      userId,
-      currentUserRole,
-    );
-  }
-
-  async addPaymentMethod(
-    userId: number,
-    type: PaymentMethodType,
-    data: any,
-    currentUserRole: UserRole,
-  ) {
-    if (!this.authService.isCustomer(currentUserRole)) {
-      throw new ForbiddenError(
-        "Apenas clientes podem adicionar métodos de pagamento",
-      );
-    }
-
-    const paymentMethodService = new PaymentMethodService();
-
-    switch (type) {
-      case PaymentMethodType.CREDIT_CARD:
-        return await paymentMethodService.addCreditCard(
-          userId,
-          data,
-          currentUserRole,
-        );
-
-      case PaymentMethodType.DEBIT_CARD:
-        return await paymentMethodService.addDebitCard(
-          userId,
-          data,
-          currentUserRole,
-        );
-
-      default:
-        throw new ValidationError("Tipo de método de pagamento inválido");
-    }
   }
 }

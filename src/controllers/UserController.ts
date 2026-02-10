@@ -6,11 +6,7 @@ import {
   customerMiddleware,
 } from "../middlewares/AuthMiddleware";
 
-import {
-  updateUserSchema,
-  updateAddressSchema,
-  addPaymentMethodSchema,
-} from "../validators/UserValidator";
+import { updateUserSchema, updateAddressSchema } from "../validators/UserValidator";
 import { validate } from "../validate";
 
 const userService = new UserService();
@@ -54,7 +50,7 @@ export class UserController {
         Number(req.params.id),
         req.body,
         req.user.id,
-        req.user.role,
+        req.user.role
       );
 
       return res.json({ user });
@@ -70,7 +66,7 @@ export class UserController {
       const user = await userService.updateUserAddress(
         req.user.id,
         req.body,
-        req.user.role,
+        req.user.role
       );
 
       return res.json({ user });
@@ -128,55 +124,6 @@ export class UserController {
       next(error);
     }
   }
-
-  async getPaymentMethods(req: Request, res: Response, next: NextFunction) {
-    try {
-      const userId = req.user?.id as number;
-      const role = req.user?.role as UserRole;
-
-      const paymentMethods = await userService.getUserPaymentMethods(
-        userId,
-        role,
-      );
-      return res.status(200).json(paymentMethods);
-    } catch (error) {
-      next(error);
-    }
-  }
-
-  async addPaymentMethod(req: Request, res: Response, next: NextFunction) {
-    try {
-      validate(addPaymentMethodSchema, req.body);
-
-      const {
-        type,
-        cardHolderName,
-        cardNumber,
-        cardExpiryMonth,
-        cardExpiryYear,
-        cardCvv,
-        isDefault,
-      } = req.body;
-
-      const paymentMethod = await userService.addPaymentMethod(
-        req.user.id,
-        type,
-        {
-          cardHolderName,
-          cardNumber,
-          cardExpiryMonth,
-          cardExpiryYear,
-          cardCvv,
-          isDefault,
-        },
-        req.user.role,
-      );
-
-      return res.status(201).json({ paymentMethod });
-    } catch (err) {
-      next(err);
-    }
-  }
 }
 
 const controller = new UserController();
@@ -188,24 +135,14 @@ router.delete("/:id", controller.deleteUser.bind(controller));
 router.patch(
   "/:id/status",
   adminMiddleware,
-  controller.toggleUserStatus.bind(controller),
+  controller.toggleUserStatus.bind(controller)
 );
 
 router.put(
   "/me/address",
   customerMiddleware,
-  controller.updateUserAddress.bind(controller),
+  controller.updateUserAddress.bind(controller)
 );
 router.put("/me/password", controller.changePassword.bind(controller));
-router.get(
-  "/me/payment-methods",
-  customerMiddleware,
-  controller.getPaymentMethods.bind(controller),
-);
-router.post(
-  "/me/payment-methods",
-  customerMiddleware,
-  controller.addPaymentMethod.bind(controller),
-);
 
 export { router as UserRouter };
