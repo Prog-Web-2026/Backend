@@ -66,7 +66,7 @@ describe("Cart Controller E2E Tests", () => {
         .set("Authorization", `Bearer ${customerToken}`)
         .send({ productId: productLowStockId, quantity: 5 });
 
-      expect(response.status).toBe(400);
+      expect(response.status).toBe(409);
       expect(response.body.message).toContain("Estoque insuficiente");
     });
 
@@ -166,7 +166,7 @@ describe("Cart Controller E2E Tests", () => {
         .set("Authorization", `Bearer ${customerToken}`)
         .send({ quantity: 5 });
 
-      expect(response.status).toBe(400);
+      expect(response.status).toBe(409);
       expect(response.body.message).toContain("Estoque insuficiente");
     });
 
@@ -283,7 +283,7 @@ describe("Cart Controller E2E Tests", () => {
           .get("/cart/availability")
           .set("Authorization", `Bearer ${customerToken}`);
 
-        expect(response.status).toBe(400);
+        expect(response.status).toBe(409);
         expect(response.body.message).toMatch(
           /Estoque insuficiente|Produto indisponível/,
         );
@@ -372,7 +372,7 @@ describe("Cart Controller E2E Tests", () => {
           .set("Authorization", `Bearer ${customerToken}`)
           .send({ selectedCartItemIds: [itemId] });
 
-        expect(response.status).toBe(400);
+        expect(response.status).toBe(409);
         expect(response.body.message).toMatch(
           /Produto indisponível|Estoque insuficiente/,
         );

@@ -536,12 +536,7 @@ export class ProductReviewService {
     return true;
   }
 
-  async reportReview(
-    reviewId: number,
-    userId: number,
-    reason: string,
-    details?: string,
-  ) {
+  async reportReview(reviewId: number, userId: number, details?: string) {
     const review = await this.productReviewRepository.findById(reviewId, {
       include: [
         {
@@ -566,7 +561,6 @@ export class ProductReviewService {
     return {
       reviewId,
       reportedBy: userId,
-      reason,
       details,
       timestamp: new Date(),
       status: "pending",

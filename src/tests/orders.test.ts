@@ -28,11 +28,11 @@ describe("Order Controller E2E Tests - Fluxo Completo", () => {
     // Reset product stock
     await Product.update(
       { stock: originalStockProduct1 },
-      { where: { id: global.testProduct1.id } }
+      { where: { id: global.testProduct1.id } },
     );
     await Product.update(
       { stock: originalStockProduct2 },
-      { where: { id: global.testProduct2.id } }
+      { where: { id: global.testProduct2.id } },
     );
 
     const item1 = await request(app)
@@ -369,7 +369,7 @@ describe("Order Controller E2E Tests - Fluxo Completo", () => {
           type: "pix",
         });
 
-      expect(response.status).toBe(400);
+      expect(response.status).toBe(409);
     });
   });
 

@@ -158,12 +158,11 @@ export class ProductReviewController {
     try {
       const reviewId = Number(req.params.id);
       const userId = req.user!.id;
-      const { reason, details } = req.body;
+      const { details } = req.body;
 
       const result = await productReviewService.reportReview(
         reviewId,
         userId,
-        reason,
         details,
       );
 

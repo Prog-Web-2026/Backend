@@ -2,11 +2,7 @@ import jwt, { SignOptions, VerifyOptions } from "jsonwebtoken";
 import bcrypt from "bcryptjs";
 import { User, UserRole } from "../models/UserModel";
 import { UserRepository } from "../repository/UserRepository";
-import {
-  ConflictError,
-  UnauthorizedError,
-  ValidationError,
-} from "../config/ErrorHandler";
+import { UnauthorizedError, ValidationError } from "../config/ErrorHandler";
 
 export interface AuthPayload {
   id: number;
@@ -60,7 +56,7 @@ export class AuthService {
 
   validatePassword(password: string): void {
     if (password.length < 6) {
-      throw new ConflictError("A senha deve ter no mínimo 6 caracteres");
+      throw new ValidationError("A senha deve ter no mínimo 6 caracteres");
     }
   }
 

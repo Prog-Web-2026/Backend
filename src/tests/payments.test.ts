@@ -128,8 +128,10 @@ describe("Payment Controller E2E Tests", () => {
       // Cleanup: remove user's related data
       const Cart = (await import("../models/CartModel")).Cart;
       const OrderItem = (await import("../models/OrderItemModel")).OrderItem;
-      const userOrders = await Order.findAll({ where: { userId: anotherCustomer.id } });
-      const orderIds = userOrders.map(o => o.id);
+      const userOrders = await Order.findAll({
+        where: { userId: anotherCustomer.id },
+      });
+      const orderIds = userOrders.map((o) => o.id);
       await Cart.destroy({ where: { userId: anotherCustomer.id } });
       await Payment.destroy({ where: { userId: anotherCustomer.id } });
       if (orderIds.length > 0) {
@@ -205,9 +207,7 @@ describe("Payment Controller E2E Tests", () => {
       const response = await request(app)
         .post(`/payments/${paymentId}/refund`)
         .set("Authorization", `Bearer ${adminToken}`)
-        .send({
-          reason: "Pedido cancelado pelo cliente",
-        });
+        .send();
 
       expect(response.status).toBe(200);
       expect(response.body.payment.status).toBe("refunded");
@@ -217,16 +217,12 @@ describe("Payment Controller E2E Tests", () => {
       await request(app)
         .post(`/payments/${paymentId}/refund`)
         .set("Authorization", `Bearer ${adminToken}`)
-        .send({
-          reason: "Teste",
-        });
+        .send();
 
       const response = await request(app)
         .post(`/payments/${paymentId}/refund`)
         .set("Authorization", `Bearer ${adminToken}`)
-        .send({
-          reason: "Segundo estorno",
-        });
+        .send();
 
       expect(response.status).toBe(400);
     });
@@ -235,9 +231,7 @@ describe("Payment Controller E2E Tests", () => {
       const response = await request(app)
         .post(`/payments/${paymentId}/refund`)
         .set("Authorization", `Bearer ${customerToken}`)
-        .send({
-          reason: "Cliente tentando estornar",
-        });
+        .send();
 
       expect(response.status).toBe(403);
     });

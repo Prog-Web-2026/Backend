@@ -791,7 +791,6 @@ test_refund() {
 
     # Estornar pagamento
     test_endpoint "POST /payments/:id/refund - Estornar Pagamento (Admin)" "POST" "/payments/$PAYMENT_ID/refund" \
-        '{"reason":"Teste de estorno"}' \
         "$ADMIN_TOKEN"
 
     # Verificar pagamento após estorno
