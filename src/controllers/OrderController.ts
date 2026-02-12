@@ -14,7 +14,7 @@ export class OrderController {
   async createOrderFromSelectedItems(
     req: Request,
     res: Response,
-    next: NextFunction
+    next: NextFunction,
   ) {
     try {
       const userId = req.user?.id as number;
@@ -31,7 +31,7 @@ export class OrderController {
         userId,
         selectedCartItemIds,
         notes,
-        currentUserRole
+        currentUserRole,
       );
 
       res.status(201).json({
@@ -52,7 +52,7 @@ export class OrderController {
       const order = await orderService.getOrderById(
         orderId,
         userId,
-        currentUserRole
+        currentUserRole,
       );
 
       res.status(200).json({ order });
@@ -75,7 +75,7 @@ export class OrderController {
       const orders = await orderService.getUserOrders(
         userId,
         currentUserRole,
-        filters
+        filters,
       );
 
       res.status(200).json({ orders });
@@ -95,7 +95,7 @@ export class OrderController {
         orderId,
         status,
         userId,
-        currentUserRole
+        currentUserRole,
       );
 
       res.status(200).json({
@@ -116,7 +116,7 @@ export class OrderController {
       const order = await orderService.cancelOrder(
         orderId,
         userId,
-        currentUserRole
+        currentUserRole,
       );
 
       res.status(200).json({
@@ -139,7 +139,7 @@ export class OrderController {
         orderId,
         userId,
         paymentData,
-        currentUserRole
+        currentUserRole,
       );
 
       res.status(200).json({
@@ -158,7 +158,7 @@ export class OrderController {
 
       const stats = await orderService.getOrderStatistics(
         userId,
-        currentUserRole
+        currentUserRole,
       );
 
       res.status(200).json({ stats });
@@ -170,14 +170,13 @@ export class OrderController {
   async getAvailableOrdersForDelivery(
     req: Request,
     res: Response,
-    next: NextFunction
+    next: NextFunction,
   ) {
     try {
       const currentUserRole = req.user?.role as UserRole;
 
-      const orders = await orderService.getAvailableOrdersForDelivery(
-        currentUserRole
-      );
+      const orders =
+        await orderService.getAvailableOrdersForDelivery(currentUserRole);
 
       res.status(200).json({ orders });
     } catch (error) {
@@ -188,7 +187,7 @@ export class OrderController {
   async acceptOrderForDelivery(
     req: Request,
     res: Response,
-    next: NextFunction
+    next: NextFunction,
   ) {
     try {
       const orderId = Number(req.params.id);
@@ -198,7 +197,7 @@ export class OrderController {
       const order = await orderService.acceptOrderForDelivery(
         orderId,
         deliveryId,
-        currentUserRole
+        currentUserRole,
       );
 
       res.status(200).json({
@@ -220,7 +219,7 @@ export class OrderController {
         orderId,
         "delivered" as any,
         userId,
-        currentUserRole
+        currentUserRole,
       );
 
       res.status(200).json({
@@ -239,7 +238,7 @@ const controller = new OrderController();
 router.post(
   "/",
   customerMiddleware,
-  controller.createOrderFromSelectedItems.bind(controller)
+  controller.createOrderFromSelectedItems.bind(controller),
 );
 
 router.get("/my-orders", controller.getUserOrders.bind(controller));
@@ -247,47 +246,51 @@ router.get("/my-orders", controller.getUserOrders.bind(controller));
 router.post(
   "/:id/payment",
   customerMiddleware,
-  controller.processOrderPayment.bind(controller)
+  controller.processOrderPayment.bind(controller),
 );
 
 router.patch(
   "/:id/cancel",
   customerMiddleware,
-  controller.cancelOrder.bind(controller)
+  controller.cancelOrder.bind(controller),
 );
 
 // Rotas de entregador
 router.get(
   "/delivery/available",
   deliveryMiddleware,
-  controller.getAvailableOrdersForDelivery.bind(controller)
+  controller.getAvailableOrdersForDelivery.bind(controller),
 );
 
 router.post(
   "/delivery/:id/accept",
   deliveryMiddleware,
-  controller.acceptOrderForDelivery.bind(controller)
+  controller.acceptOrderForDelivery.bind(controller),
 );
 
 router.patch(
   "/delivery/:id/delivered",
   deliveryMiddleware,
-  controller.markOrderAsDelivered.bind(controller)
+  controller.markOrderAsDelivered.bind(controller),
 );
 
 router.get(
   "/delivery/my-deliveries",
   deliveryMiddleware,
-  controller.getUserOrders.bind(controller)
+  controller.getUserOrders.bind(controller),
 );
 
 // Rotas de admin
-router.get("/stats", adminMiddleware, controller.getOrderStatistics.bind(controller));
+router.get(
+  "/stats",
+  adminMiddleware,
+  controller.getOrderStatistics.bind(controller),
+);
 
 router.patch(
   "/:id/status",
   adminMiddleware,
-  controller.updateOrderStatus.bind(controller)
+  controller.updateOrderStatus.bind(controller),
 );
 
 router.get("/all", adminMiddleware, controller.getUserOrders.bind(controller));
