@@ -2,7 +2,6 @@ import request from "supertest";
 import { app } from "../app";
 import { UserRole } from "../models/UserModel";
 
-// Mock GeolocationService to avoid external API calls
 jest.mock("../services/GeolocationService", () => ({
   GeolocationService: jest.fn().mockImplementation(() => ({
     geocodeAddress: jest.fn().mockResolvedValue({

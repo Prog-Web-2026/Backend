@@ -15,11 +15,10 @@ export interface ProductReviewAttributes {
   updatedAt?: Date;
 }
 
-export interface ProductReviewCreationAttributes
-  extends Optional<
-    ProductReviewAttributes,
-    "id" | "isActive" | "createdAt" | "updatedAt" | "comment" | "imageUrl"
-  > {}
+export interface ProductReviewCreationAttributes extends Optional<
+  ProductReviewAttributes,
+  "id" | "isActive" | "createdAt" | "updatedAt" | "comment" | "imageUrl"
+> {}
 
 export class ProductReview
   extends Model<ProductReviewAttributes, ProductReviewCreationAttributes>
@@ -35,7 +34,6 @@ export class ProductReview
   public readonly createdAt!: Date;
   public readonly updatedAt!: Date;
 
-  // Associations
   public readonly user?: User;
   public readonly product?: Product;
 }
@@ -95,10 +93,9 @@ ProductReview.init(
         fields: ["userId", "productId"],
       },
     ],
-  }
+  },
 );
 
-// Associations
 ProductReview.belongsTo(User, { foreignKey: "userId", as: "user" });
 ProductReview.belongsTo(Product, { foreignKey: "productId", as: "product" });
 User.hasMany(ProductReview, { foreignKey: "userId", as: "reviews" });

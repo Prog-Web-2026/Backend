@@ -20,19 +20,31 @@ import { PaymentRouter } from "./controllers/PaymentController";
 import { ProductReviewRouter } from "./controllers/ProductReviewController";
 import { errorHandler, NotFoundError } from "./config/ErrorHandler";
 
+export const createLoginLimiter = () =>
+  rateLimit({
+    windowMs: 60 * 1000,
+    max: 5,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { message: "Too many login attempts. Try again later." },
+  });
+
+export const createGeneralLimiter = () =>
+  rateLimit({
+    windowMs: 60 * 1000,
+    max: 10,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { message: "Too many requests. Try again later." },
+  });
+
 export const app = express();
 app.use(express.json());
 
-const limiter = rateLimit({
-  windowMs: 60 * 1000,
-  max: 100,
-  standardHeaders: true,
-  legacyHeaders: false,
-  message: "Muitas requisições. Tente novamente em instantes.",
-});
-
 if (process.env.NODE_ENV !== "test") {
-  app.use(limiter);
+  app.use(createGeneralLimiter());
+  app.use("/auth/login", createLoginLimiter());
+  app.use("/auth/delivery/login", createLoginLimiter());
 }
 
 app.get("/", (_req, res) => {

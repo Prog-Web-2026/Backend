@@ -4,7 +4,7 @@ import { Order } from "../models/OrderModel";
 import { Product } from "../models/ProductModel";
 import { UserRole } from "../models/UserModel";
 
-describe("Order Controller E2E Tests - Fluxo Completo", () => {
+describe("Order Controller E2E Tests", () => {
   let customerToken: string;
   let adminToken: string;
   let deliveryToken: string;
@@ -25,7 +25,6 @@ describe("Order Controller E2E Tests - Fluxo Completo", () => {
   });
 
   beforeEach(async () => {
-    // Reset product stock
     await Product.update(
       { stock: originalStockProduct1 },
       { where: { id: global.testProduct1.id } },
@@ -66,8 +65,8 @@ describe("Order Controller E2E Tests - Fluxo Completo", () => {
     cartItemIds = [];
   });
 
-  describe("Fluxo Completo de Compra", () => {
-    it("deve completar fluxo de compra completo", async () => {
+  describe("Complete Purchase Flow", () => {
+    it("should complete full purchase flow when all steps are valid", async () => {
       const createOrderResponse = await request(app)
         .post("/orders")
         .set("Authorization", `Bearer ${customerToken}`)
@@ -148,7 +147,7 @@ describe("Order Controller E2E Tests - Fluxo Completo", () => {
       expect(statsResponse.body.stats).toHaveProperty("preparing");
     });
 
-    it("deve permitir cancelamento de pedido pendente", async () => {
+    it("should allow cancellation when order is pending", async () => {
       const createOrderResponse = await request(app)
         .post("/orders")
         .set("Authorization", `Bearer ${customerToken}`)
@@ -172,7 +171,7 @@ describe("Order Controller E2E Tests - Fluxo Completo", () => {
       expect(product2After!.stock).toBe(originalStockProduct2);
     });
 
-    it("não deve permitir cancelamento de pedido após preparação", async () => {
+    it("should reject cancellation when order is already preparing", async () => {
       const createOrderResponse = await request(app)
         .post("/orders")
         .set("Authorization", `Bearer ${customerToken}`)
@@ -205,7 +204,7 @@ describe("Order Controller E2E Tests - Fluxo Completo", () => {
   });
 
   describe("GET /orders/:id", () => {
-    it("cliente deve ver próprio pedido", async () => {
+    it("should return order when customer owns it", async () => {
       const createResponse = await request(app)
         .post("/orders")
         .set("Authorization", `Bearer ${customerToken}`)
@@ -225,7 +224,7 @@ describe("Order Controller E2E Tests - Fluxo Completo", () => {
       expect(response.body.order.items).toHaveLength(2);
     });
 
-    it("admin deve ver qualquer pedido", async () => {
+    it("should return any order when user is admin", async () => {
       const createResponse = await request(app)
         .post("/orders")
         .set("Authorization", `Bearer ${customerToken}`)
@@ -243,7 +242,7 @@ describe("Order Controller E2E Tests - Fluxo Completo", () => {
       expect(response.body.order.id).toBe(orderId);
     });
 
-    it("cliente não deve ver pedido de outro cliente", async () => {
+    it("should return 403 when customer requests another customer's order", async () => {
       const User = (await import("../models/UserModel")).User;
       const anotherCustomer = await User.create({
         name: "Outro Cliente",
@@ -288,7 +287,6 @@ describe("Order Controller E2E Tests - Fluxo Completo", () => {
 
       expect(response.status).toBe(403);
 
-      // Cleanup: remove user's cart, orderItem, order, then user
       const Cart = (await import("../models/CartModel")).Cart;
       const OrderItem = (await import("../models/OrderItemModel")).OrderItem;
       const Payment = (await import("../models/PaymentModel")).Payment;
@@ -301,7 +299,7 @@ describe("Order Controller E2E Tests - Fluxo Completo", () => {
   });
 
   describe("Payment Integration", () => {
-    it("deve processar pagamento PIX", async () => {
+    it("should process PIX payment when order is pending", async () => {
       const createResponse = await request(app)
         .post("/orders")
         .set("Authorization", `Bearer ${customerToken}`)
@@ -323,7 +321,7 @@ describe("Order Controller E2E Tests - Fluxo Completo", () => {
       expect(response.body.payment.status).toBe("success");
     });
 
-    it("deve processar pagamento com cartão de débito", async () => {
+    it("should process debit card payment when order is pending", async () => {
       const createResponse = await request(app)
         .post("/orders")
         .set("Authorization", `Bearer ${customerToken}`)
@@ -345,7 +343,7 @@ describe("Order Controller E2E Tests - Fluxo Completo", () => {
       expect(response.body.payment.status).toBe("success");
     });
 
-    it("não deve processar pagamento de pedido já pago", async () => {
+    it("should reject payment when order is already paid", async () => {
       const createResponse = await request(app)
         .post("/orders")
         .set("Authorization", `Bearer ${customerToken}`)
@@ -374,7 +372,7 @@ describe("Order Controller E2E Tests - Fluxo Completo", () => {
   });
 
   describe("Delivery Flow", () => {
-    it("entregador deve ver pedidos disponíveis para entrega", async () => {
+    it("should list available orders when user is delivery person", async () => {
       const response = await request(app)
         .get("/orders/delivery/available")
         .set("Authorization", `Bearer ${deliveryToken}`);
@@ -383,7 +381,7 @@ describe("Order Controller E2E Tests - Fluxo Completo", () => {
       expect(Array.isArray(response.body.orders)).toBe(true);
     });
 
-    it("entregador deve aceitar pedido pronto para entrega", async () => {
+    it("should accept order when order is ready for pickup", async () => {
       const createResponse = await request(app)
         .post("/orders")
         .set("Authorization", `Bearer ${customerToken}`)
@@ -393,7 +391,6 @@ describe("Order Controller E2E Tests - Fluxo Completo", () => {
 
       orderId = createResponse.body.order.id;
 
-      // Pagar o pedido
       await request(app)
         .post(`/orders/${orderId}/payment`)
         .set("Authorization", `Bearer ${customerToken}`)
@@ -401,7 +398,6 @@ describe("Order Controller E2E Tests - Fluxo Completo", () => {
           type: "credit_card",
         });
 
-      // Admin prepara e marca pronto
       await request(app)
         .patch(`/orders/${orderId}/status`)
         .set("Authorization", `Bearer ${adminToken}`)
@@ -412,7 +408,6 @@ describe("Order Controller E2E Tests - Fluxo Completo", () => {
         .set("Authorization", `Bearer ${adminToken}`)
         .send({ status: "ready_for_pickup" });
 
-      // Entregador aceita
       const acceptResponse = await request(app)
         .post(`/orders/delivery/${orderId}/accept`)
         .set("Authorization", `Bearer ${deliveryToken}`);
@@ -422,7 +417,7 @@ describe("Order Controller E2E Tests - Fluxo Completo", () => {
       expect(acceptResponse.body.order.deliveryId).toBe(global.testDelivery.id);
     });
 
-    it("entregador deve marcar pedido como entregue", async () => {
+    it("should mark order as delivered when delivery person confirms", async () => {
       const createResponse = await request(app)
         .post("/orders")
         .set("Authorization", `Bearer ${customerToken}`)
@@ -432,7 +427,6 @@ describe("Order Controller E2E Tests - Fluxo Completo", () => {
 
       orderId = createResponse.body.order.id;
 
-      // Pagar, preparar, marcar pronto e aceitar entrega
       await request(app)
         .post(`/orders/${orderId}/payment`)
         .set("Authorization", `Bearer ${customerToken}`)
@@ -452,7 +446,6 @@ describe("Order Controller E2E Tests - Fluxo Completo", () => {
         .post(`/orders/delivery/${orderId}/accept`)
         .set("Authorization", `Bearer ${deliveryToken}`);
 
-      // Marcar como entregue
       const deliveredResponse = await request(app)
         .patch(`/orders/delivery/${orderId}/delivered`)
         .set("Authorization", `Bearer ${deliveryToken}`);

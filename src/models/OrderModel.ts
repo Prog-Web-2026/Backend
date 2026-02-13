@@ -28,11 +28,10 @@ export interface OrderAttributes {
   updatedAt?: Date;
 }
 
-export interface OrderCreationAttributes
-  extends Optional<
-    OrderAttributes,
-    "id" | "status" | "deliveryId" | "createdAt" | "updatedAt"
-  > {}
+export interface OrderCreationAttributes extends Optional<
+  OrderAttributes,
+  "id" | "status" | "deliveryId" | "createdAt" | "updatedAt"
+> {}
 
 export class Order
   extends Model<OrderAttributes, OrderCreationAttributes>
@@ -52,7 +51,6 @@ export class Order
   public readonly createdAt!: Date;
   public readonly updatedAt!: Date;
 
-  // Associations
   public readonly customer?: User;
   public readonly deliveryPerson?: User;
   public readonly items?: any[];
@@ -131,10 +129,9 @@ Order.init(
     sequelize,
     tableName: "orders",
     timestamps: true,
-  }
+  },
 );
 
-// Associations
 Order.belongsTo(User, { foreignKey: "userId", as: "customer" });
 Order.belongsTo(User, { foreignKey: "deliveryId", as: "deliveryPerson" });
 User.hasMany(Order, { foreignKey: "userId", as: "orders" });

@@ -53,7 +53,7 @@ describe("Payment Controller E2E Tests", () => {
   });
 
   describe("GET /payments/:id", () => {
-    it("cliente deve ver próprio pagamento", async () => {
+    it("should return payment when customer owns it", async () => {
       const response = await request(app)
         .get(`/payments/${paymentId}`)
         .set("Authorization", `Bearer ${customerToken}`);
@@ -64,7 +64,7 @@ describe("Payment Controller E2E Tests", () => {
       expect(response.body.payment.status).toBe("success");
     });
 
-    it("admin deve ver qualquer pagamento", async () => {
+    it("should return any payment when user is admin", async () => {
       const response = await request(app)
         .get(`/payments/${paymentId}`)
         .set("Authorization", `Bearer ${adminToken}`);
@@ -73,7 +73,7 @@ describe("Payment Controller E2E Tests", () => {
       expect(response.body.payment.id).toBe(paymentId);
     });
 
-    it("cliente não deve ver pagamento de outro cliente", async () => {
+    it("should return 403 when customer requests another customer's payment", async () => {
       const User = (await import("../models/UserModel")).User;
       const anotherCustomer = await User.create({
         name: "Outro Cliente Pagamento",
@@ -125,7 +125,6 @@ describe("Payment Controller E2E Tests", () => {
 
       expect(response.status).toBe(403);
 
-      // Cleanup: remove user's related data
       const Cart = (await import("../models/CartModel")).Cart;
       const OrderItem = (await import("../models/OrderItemModel")).OrderItem;
       const userOrders = await Order.findAll({
@@ -143,7 +142,7 @@ describe("Payment Controller E2E Tests", () => {
   });
 
   describe("GET /payments/order/:orderId", () => {
-    it("deve retornar pagamento pelo ID do pedido", async () => {
+    it("should return payment when valid order ID is provided", async () => {
       const response = await request(app)
         .get(`/payments/order/${orderId}`)
         .set("Authorization", `Bearer ${customerToken}`);
@@ -152,7 +151,7 @@ describe("Payment Controller E2E Tests", () => {
       expect(response.body.payment.orderId).toBe(orderId);
     });
 
-    it("deve retornar 404 para pedido sem pagamento", async () => {
+    it("should return 404 when order has no payment", async () => {
       const item = await request(app)
         .post("/cart")
         .set("Authorization", `Bearer ${customerToken}`)
@@ -179,7 +178,7 @@ describe("Payment Controller E2E Tests", () => {
   });
 
   describe("GET /payments/my-payments", () => {
-    it("cliente deve ver seus próprios pagamentos", async () => {
+    it("should return customer's own payments when user is customer", async () => {
       const response = await request(app)
         .get("/payments/my-payments")
         .set("Authorization", `Bearer ${customerToken}`);
@@ -191,7 +190,7 @@ describe("Payment Controller E2E Tests", () => {
       expect(response.body.payments[0].userId).toBe(global.testCustomer.id);
     });
 
-    it("entregador não deve ver pagamentos", async () => {
+    it("should return 403 when user is delivery person", async () => {
       const deliveryToken = await getAuthToken(global.testDelivery);
 
       const response = await request(app)
@@ -203,7 +202,7 @@ describe("Payment Controller E2E Tests", () => {
   });
 
   describe("POST /payments/:id/refund (Admin only)", () => {
-    it("admin deve estornar pagamento", async () => {
+    it("should refund payment when user is admin", async () => {
       const response = await request(app)
         .post(`/payments/${paymentId}/refund`)
         .set("Authorization", `Bearer ${adminToken}`)
@@ -213,7 +212,7 @@ describe("Payment Controller E2E Tests", () => {
       expect(response.body.payment.status).toBe("refunded");
     });
 
-    it("não deve estornar pagamento já estornado", async () => {
+    it("should reject refund when payment is already refunded", async () => {
       await request(app)
         .post(`/payments/${paymentId}/refund`)
         .set("Authorization", `Bearer ${adminToken}`)
@@ -227,7 +226,7 @@ describe("Payment Controller E2E Tests", () => {
       expect(response.status).toBe(400);
     });
 
-    it("cliente não deve estornar pagamento", async () => {
+    it("should return 403 when user is customer", async () => {
       const response = await request(app)
         .post(`/payments/${paymentId}/refund`)
         .set("Authorization", `Bearer ${customerToken}`)

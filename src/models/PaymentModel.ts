@@ -30,8 +30,10 @@ export interface PaymentAttributes {
   updatedAt?: Date;
 }
 
-export interface PaymentCreationAttributes
-  extends Optional<PaymentAttributes, "id" | "status" | "createdAt" | "updatedAt"> {}
+export interface PaymentCreationAttributes extends Optional<
+  PaymentAttributes,
+  "id" | "status" | "createdAt" | "updatedAt"
+> {}
 
 export class Payment
   extends Model<PaymentAttributes, PaymentCreationAttributes>
@@ -48,7 +50,6 @@ export class Payment
   public readonly createdAt!: Date;
   public readonly updatedAt!: Date;
 
-  // Associations
   public readonly order?: Order;
   public readonly user?: User;
 }
@@ -112,10 +113,9 @@ Payment.init(
       { fields: ["userId"] },
       { fields: ["status"] },
     ],
-  }
+  },
 );
 
-// Associations
 Payment.belongsTo(Order, { foreignKey: "orderId", as: "order" });
 Payment.belongsTo(User, { foreignKey: "userId", as: "user" });
 Order.hasOne(Payment, { foreignKey: "orderId", as: "payment" });

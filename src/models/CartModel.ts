@@ -12,8 +12,10 @@ export interface CartAttributes {
   updatedAt?: Date;
 }
 
-export interface CartCreationAttributes
-  extends Optional<CartAttributes, "id" | "createdAt" | "updatedAt"> {}
+export interface CartCreationAttributes extends Optional<
+  CartAttributes,
+  "id" | "createdAt" | "updatedAt"
+> {}
 
 export class Cart
   extends Model<CartAttributes, CartCreationAttributes>
@@ -26,7 +28,6 @@ export class Cart
   public readonly createdAt!: Date;
   public readonly updatedAt!: Date;
 
-  // Associations
   public readonly product?: Product;
   public readonly user?: User;
 }
@@ -73,10 +74,9 @@ Cart.init(
         fields: ["userId", "productId"],
       },
     ],
-  }
+  },
 );
 
-// Associations
 Cart.belongsTo(User, { foreignKey: "userId", as: "user" });
 Cart.belongsTo(Product, { foreignKey: "productId", as: "product" });
 User.hasMany(Cart, { foreignKey: "userId", as: "cartItems" });

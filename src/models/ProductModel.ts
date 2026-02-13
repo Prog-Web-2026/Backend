@@ -17,11 +17,15 @@ export interface ProductAttributes {
   updatedAt?: Date;
 }
 
-export interface ProductCreationAttributes
-  extends Optional<
-    ProductAttributes,
-    "id" | "isActive" | "averageRating" | "reviewCount" | "createdAt" | "updatedAt"
-  > {}
+export interface ProductCreationAttributes extends Optional<
+  ProductAttributes,
+  | "id"
+  | "isActive"
+  | "averageRating"
+  | "reviewCount"
+  | "createdAt"
+  | "updatedAt"
+> {}
 
 export class Product
   extends Model<ProductAttributes, ProductCreationAttributes>
@@ -40,7 +44,6 @@ export class Product
   public readonly createdAt!: Date;
   public readonly updatedAt!: Date;
 
-  // Associations
   public readonly category?: Category;
   public readonly reviews?: any[];
   public readonly orderItems?: any[];
@@ -119,9 +122,8 @@ Product.init(
     sequelize,
     tableName: "products",
     timestamps: true,
-  }
+  },
 );
 
-// Associations
 Product.belongsTo(Category, { foreignKey: "categoryId", as: "category" });
 Category.hasMany(Product, { foreignKey: "categoryId", as: "products" });

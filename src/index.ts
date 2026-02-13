@@ -1,7 +1,6 @@
 import dotenv from "dotenv";
 dotenv.config();
 
-// Importa todos os models com associações na ordem correta
 import "./models/Associations";
 
 import sequelize from "./config/database";

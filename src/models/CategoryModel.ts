@@ -24,7 +24,6 @@ export class Category
   public readonly createdAt!: Date;
   public readonly updatedAt!: Date;
 
-  // Associations
   public readonly products?: any[];
 }
 

@@ -293,7 +293,7 @@ describe("GeolocationService (Unit)", () => {
       const target = { latitude: -23.55052, longitude: -46.633308 };
 
       const deliveryPersons = [
-        { id: 1, latitude: -22.906847, longitude: -43.172897 }, // Rio
+        { id: 1, latitude: -22.906847, longitude: -43.172897 },
       ];
 
       const nearby = service.findNearbyDeliveryPersons(

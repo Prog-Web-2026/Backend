@@ -37,7 +37,7 @@ describe("Product Controller E2E Tests", () => {
   });
 
   describe("GET /products", () => {
-    it("deve listar todos os produtos ativos", async () => {
+    it("should list all active products when no filters applied", async () => {
       const response = await request(app).get("/products");
 
       expect(response.status).toBe(200);
@@ -46,7 +46,7 @@ describe("Product Controller E2E Tests", () => {
       expect(response.body.every((p: any) => p.isActive === true)).toBe(true);
     });
 
-    it("deve filtrar produtos por categoria", async () => {
+    it("should filter products by category when categoryId is provided", async () => {
       const response = await request(app).get(
         `/products?categoryId=${global.testCategory.id}`,
       );
@@ -59,28 +59,28 @@ describe("Product Controller E2E Tests", () => {
       ).toBe(true);
     });
 
-    it("deve filtrar produtos por preço mínimo", async () => {
+    it("should filter products by minimum price when minPrice is provided", async () => {
       const response = await request(app).get("/products?minPrice=3000");
 
       expect(response.status).toBe(200);
       expect(response.body.every((p: any) => p.price >= 3000)).toBe(true);
     });
 
-    it("deve filtrar produtos por preço máximo", async () => {
+    it("should filter products by maximum price when maxPrice is provided", async () => {
       const response = await request(app).get("/products?maxPrice=2000");
 
       expect(response.status).toBe(200);
       expect(response.body.every((p: any) => p.price <= 2000)).toBe(true);
     });
 
-    it("deve filtrar produtos em estoque", async () => {
+    it("should filter in-stock products when inStock is true", async () => {
       const response = await request(app).get("/products?inStock=true");
 
       expect(response.status).toBe(200);
       expect(response.body.every((p: any) => p.stock > 0)).toBe(true);
     });
 
-    it("deve filtrar produtos sem estoque", async () => {
+    it("should filter out-of-stock products when inStock is false", async () => {
       const noStockProduct = await Product.create({
         name: "Produto Sem Estoque",
         description: "Produto sem estoque para teste",
@@ -102,7 +102,7 @@ describe("Product Controller E2E Tests", () => {
   });
 
   describe("GET /products/search", () => {
-    it("deve buscar produtos por termo no nome", async () => {
+    it("should find products by name when search term matches", async () => {
       const response = await request(app).get("/products/search?q=Smartphone");
 
       expect(response.status).toBe(200);
@@ -110,20 +110,20 @@ describe("Product Controller E2E Tests", () => {
       expect(response.body[0].name.toLowerCase()).toContain("smartphone");
     });
 
-    it("deve buscar produtos por termo na descrição", async () => {
+    it("should find products by description when search term matches", async () => {
       const response = await request(app).get("/products/search?q=teste");
 
       expect(response.status).toBe(200);
       expect(response.body.length).toBeGreaterThan(0);
     });
 
-    it("não deve buscar com termo muito curto", async () => {
+    it("should reject search when term is too short", async () => {
       const response = await request(app).get("/products/search?q=a");
 
       expect(response.status).toBe(400);
     });
 
-    it("deve retornar array vazio para termo não encontrado", async () => {
+    it("should return empty array when search term has no matches", async () => {
       const response = await request(app).get(
         "/products/search?q=termoQueNaoExiste",
       );
@@ -134,7 +134,7 @@ describe("Product Controller E2E Tests", () => {
   });
 
   describe("GET /products/:id", () => {
-    it("deve retornar produto por ID", async () => {
+    it("should return product when valid ID is provided", async () => {
       const response = await request(app).get(
         `/products/${global.testProduct1.id}`,
       );
@@ -144,7 +144,7 @@ describe("Product Controller E2E Tests", () => {
       expect(response.body.name).toBe("Smartphone Teste");
     });
 
-    it("deve incluir avaliações quando solicitado", async () => {
+    it("should include reviews when includeReviews is true", async () => {
       const response = await request(app).get(
         `/products/${global.testProduct1.id}?includeReviews=true`,
       );
@@ -154,13 +154,13 @@ describe("Product Controller E2E Tests", () => {
       expect(response.body).toHaveProperty("ratingInfo");
     });
 
-    it("não deve retornar produto inativo", async () => {
+    it("should return 404 when product is inactive", async () => {
       const response = await request(app).get(`/products/${inactiveProductId}`);
 
       expect(response.status).toBe(404);
     });
 
-    it("deve retornar 404 para produto não existente", async () => {
+    it("should return 404 when product does not exist", async () => {
       const response = await request(app).get("/products/999999");
 
       expect(response.status).toBe(404);
@@ -168,7 +168,7 @@ describe("Product Controller E2E Tests", () => {
   });
 
   describe("POST /products (Admin only)", () => {
-    it("admin deve criar produto", async () => {
+    it("should create product when user is admin", async () => {
       const response = await request(app)
         .post("/products")
         .set("Authorization", `Bearer ${adminToken}`)
@@ -187,7 +187,7 @@ describe("Product Controller E2E Tests", () => {
       newProductId = response.body.product.id;
     });
 
-    it("não deve criar produto com preço negativo", async () => {
+    it("should reject product when price is negative", async () => {
       const response = await request(app)
         .post("/products")
         .set("Authorization", `Bearer ${adminToken}`)
@@ -202,7 +202,7 @@ describe("Product Controller E2E Tests", () => {
       expect(response.status).toBe(400);
     });
 
-    it("não deve criar produto com estoque negativo", async () => {
+    it("should reject product when stock is negative", async () => {
       const response = await request(app)
         .post("/products")
         .set("Authorization", `Bearer ${adminToken}`)
@@ -217,7 +217,7 @@ describe("Product Controller E2E Tests", () => {
       expect(response.status).toBe(400);
     });
 
-    it("cliente não deve criar produto", async () => {
+    it("should return 403 when user is customer", async () => {
       const response = await request(app)
         .post("/products")
         .set("Authorization", `Bearer ${customerToken}`)
@@ -230,7 +230,7 @@ describe("Product Controller E2E Tests", () => {
       expect(response.status).toBe(403);
     });
 
-    it("deve retornar 401 sem token", async () => {
+    it("should return 401 when token is missing", async () => {
       const response = await request(app).post("/products").send({
         name: "Produto Sem Token",
         price: 100,
@@ -240,7 +240,7 @@ describe("Product Controller E2E Tests", () => {
       expect(response.status).toBe(401);
     });
 
-    it("deve retornar 401 com token inválido", async () => {
+    it("should return 401 when token is invalid", async () => {
       const response = await request(app)
         .post("/products")
         .set("Authorization", "Bearer token_invalido")
@@ -255,7 +255,7 @@ describe("Product Controller E2E Tests", () => {
   });
 
   describe("PUT /products/:id (Admin only)", () => {
-    it("admin deve atualizar produto", async () => {
+    it("should update product when user is admin", async () => {
       const response = await request(app)
         .put(`/products/${global.testProduct1.id}`)
         .set("Authorization", `Bearer ${adminToken}`)
@@ -270,7 +270,7 @@ describe("Product Controller E2E Tests", () => {
       expect(response.body.product.price).toBe(2199.99);
     });
 
-    it("não deve atualizar para categoria inexistente", async () => {
+    it("should return 404 when category does not exist", async () => {
       const response = await request(app)
         .put(`/products/${global.testProduct1.id}`)
         .set("Authorization", `Bearer ${adminToken}`)
@@ -281,7 +281,7 @@ describe("Product Controller E2E Tests", () => {
       expect(response.status).toBe(404);
     });
 
-    it("cliente não deve atualizar produto", async () => {
+    it("should return 403 when user is customer", async () => {
       const response = await request(app)
         .put(`/products/${global.testProduct1.id}`)
         .set("Authorization", `Bearer ${customerToken}`)
@@ -293,7 +293,7 @@ describe("Product Controller E2E Tests", () => {
       expect(response.status).toBe(403);
     });
 
-    it("deve retornar 401 sem token", async () => {
+    it("should return 401 when token is missing", async () => {
       const response = await request(app)
         .put(`/products/${global.testProduct1.id}`)
         .send({
@@ -305,7 +305,7 @@ describe("Product Controller E2E Tests", () => {
   });
 
   describe("PATCH /products/:id/stock (Admin only)", () => {
-    it("admin deve adicionar estoque", async () => {
+    it("should add stock when admin uses add operation", async () => {
       const product = await Product.findByPk(global.testProduct1.id);
       const initialStock = product!.stock;
 
@@ -321,7 +321,7 @@ describe("Product Controller E2E Tests", () => {
       expect(response.body.product.stock).toBe(initialStock + 5);
     });
 
-    it("admin deve subtrair estoque", async () => {
+    it("should subtract stock when admin uses subtract operation", async () => {
       const product = await Product.findByPk(global.testProduct1.id);
       const initialStock = product!.stock;
 
@@ -337,7 +337,7 @@ describe("Product Controller E2E Tests", () => {
       expect(response.body.product.stock).toBe(Math.max(0, initialStock - 3));
     });
 
-    it("admin deve definir estoque específico", async () => {
+    it("should set specific stock when admin uses set operation", async () => {
       const response = await request(app)
         .patch(`/products/${global.testProduct1.id}/stock`)
         .set("Authorization", `Bearer ${adminToken}`)
@@ -350,7 +350,7 @@ describe("Product Controller E2E Tests", () => {
       expect(response.body.product.stock).toBe(100);
     });
 
-    it("não deve definir estoque negativo", async () => {
+    it("should reject stock update when quantity is negative", async () => {
       const response = await request(app)
         .patch(`/products/${global.testProduct1.id}/stock`)
         .set("Authorization", `Bearer ${adminToken}`)
@@ -362,7 +362,7 @@ describe("Product Controller E2E Tests", () => {
       expect(response.status).toBe(400);
     });
 
-    it("cliente não deve atualizar estoque", async () => {
+    it("should return 403 when user is customer", async () => {
       const response = await request(app)
         .patch(`/products/${global.testProduct1.id}/stock`)
         .set("Authorization", `Bearer ${customerToken}`)
@@ -376,7 +376,7 @@ describe("Product Controller E2E Tests", () => {
   });
 
   describe("DELETE /products/:id (Admin only)", () => {
-    it("admin deve desativar produto", async () => {
+    it("should deactivate product when user is admin", async () => {
       const productToDelete = await Product.create({
         name: "Produto para Deletar",
         description: "Produto que será desativado",
@@ -398,7 +398,7 @@ describe("Product Controller E2E Tests", () => {
       await productAfter!.destroy({ force: true });
     });
 
-    it("cliente não deve deletar produto", async () => {
+    it("should return 403 when user is customer", async () => {
       const response = await request(app)
         .delete(`/products/${global.testProduct1.id}`)
         .set("Authorization", `Bearer ${customerToken}`);
@@ -406,7 +406,7 @@ describe("Product Controller E2E Tests", () => {
       expect(response.status).toBe(403);
     });
 
-    it("deve retornar 401 sem token", async () => {
+    it("should return 401 when token is missing", async () => {
       const response = await request(app).delete(
         `/products/${global.testProduct1.id}`,
       );
