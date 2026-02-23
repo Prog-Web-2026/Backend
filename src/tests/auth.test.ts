@@ -73,6 +73,47 @@ describe("Auth Controller E2E Tests", () => {
 
       expect(response.status).toBe(400);
     });
+
+    it("should not register when name is missing", async () => {
+      const response = await request(app).post("/auth/register").send({
+        email: "sem.nome@example.com",
+        password: "senha123456",
+      });
+
+      expect(response.status).toBe(400);
+      expect(response.body.details).toHaveProperty("name");
+    });
+
+    it("should not register when email is missing", async () => {
+      const response = await request(app).post("/auth/register").send({
+        name: "Sem Email",
+        password: "senha123456",
+      });
+
+      expect(response.status).toBe(400);
+      expect(response.body.details).toHaveProperty("email");
+    });
+
+    it("should not register when email is invalid", async () => {
+      const response = await request(app).post("/auth/register").send({
+        name: "Email Inválido",
+        email: "nao-e-email",
+        password: "senha123456",
+      });
+
+      expect(response.status).toBe(400);
+      expect(response.body.details).toHaveProperty("email");
+    });
+
+    it("should not register when password is missing", async () => {
+      const response = await request(app).post("/auth/register").send({
+        name: "Sem Senha",
+        email: "sem.senha@example.com",
+      });
+
+      expect(response.status).toBe(400);
+      expect(response.body.details).toHaveProperty("password");
+    });
   });
 
   describe("POST /auth/login", () => {
@@ -123,6 +164,24 @@ describe("Auth Controller E2E Tests", () => {
       });
 
       expect(response.status).toBe(401);
+    });
+
+    it("should not login when email is missing", async () => {
+      const response = await request(app).post("/auth/login").send({
+        password: "senha123456",
+      });
+
+      expect(response.status).toBe(400);
+      expect(response.body.details).toHaveProperty("email");
+    });
+
+    it("should not login when password is missing", async () => {
+      const response = await request(app).post("/auth/login").send({
+        email: "customer@example.com",
+      });
+
+      expect(response.status).toBe(400);
+      expect(response.body.details).toHaveProperty("password");
     });
   });
 
@@ -282,6 +341,36 @@ describe("Auth Controller E2E Tests", () => {
         });
 
       expect(response.status).toBe(400);
+    });
+
+    it("should not change password when fields are missing", async () => {
+      const response = await request(app)
+        .post("/auth/change-password")
+        .set(
+          "Authorization",
+          `Bearer ${await getAuthToken(global.testCustomer)}`,
+        )
+        .send({});
+
+      expect(response.status).toBe(400);
+      expect(response.body.details).toHaveProperty("currentPassword");
+      expect(response.body.details).toHaveProperty("newPassword");
+    });
+
+    it("should not change password when new password is too short", async () => {
+      const response = await request(app)
+        .post("/auth/change-password")
+        .set(
+          "Authorization",
+          `Bearer ${await getAuthToken(global.testCustomer)}`,
+        )
+        .send({
+          currentPassword: "password123",
+          newPassword: "12",
+        });
+
+      expect(response.status).toBe(400);
+      expect(response.body.details).toHaveProperty("newPassword");
     });
   });
 

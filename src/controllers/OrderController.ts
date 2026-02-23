@@ -6,6 +6,7 @@ import {
   customerMiddleware,
   deliveryMiddleware,
 } from "../middlewares/AuthMiddleware";
+import { OrderValidator } from "../validators/OrderValidator";
 
 const orderService = new OrderService();
 const router = Router();
@@ -17,15 +18,11 @@ export class OrderController {
     next: NextFunction,
   ) {
     try {
+      OrderValidator.createOrder(req.body);
+
       const userId = req.user?.id as number;
       const currentUserRole = req.user?.role as UserRole;
       const { selectedCartItemIds, notes } = req.body;
-
-      if (!selectedCartItemIds || !Array.isArray(selectedCartItemIds)) {
-        return res.status(400).json({
-          message: "IDs dos itens do carrinho são obrigatórios",
-        });
-      }
 
       const result = await orderService.createOrderFromSelectedItems(
         userId,
@@ -86,6 +83,8 @@ export class OrderController {
 
   async updateOrderStatus(req: Request, res: Response, next: NextFunction) {
     try {
+      OrderValidator.updateStatus(req.body);
+
       const orderId = Number(req.params.id);
       const userId = req.user?.id as number;
       const currentUserRole = req.user?.role as UserRole;
@@ -130,6 +129,8 @@ export class OrderController {
 
   async processOrderPayment(req: Request, res: Response, next: NextFunction) {
     try {
+      OrderValidator.processPayment(req.body);
+
       const orderId = Number(req.params.id);
       const userId = req.user?.id as number;
       const currentUserRole = req.user?.role as UserRole;

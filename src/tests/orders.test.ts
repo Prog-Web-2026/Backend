@@ -371,6 +371,103 @@ describe("Order Controller E2E Tests", () => {
     });
   });
 
+  describe("Validation", () => {
+    it("should reject order creation when selectedCartItemIds is missing", async () => {
+      const response = await request(app)
+        .post("/orders")
+        .set("Authorization", `Bearer ${customerToken}`)
+        .send({});
+
+      expect(response.status).toBe(400);
+      expect(response.body.details).toHaveProperty("selectedCartItemIds");
+    });
+
+    it("should reject order creation when selectedCartItemIds is not an array", async () => {
+      const response = await request(app)
+        .post("/orders")
+        .set("Authorization", `Bearer ${customerToken}`)
+        .send({
+          selectedCartItemIds: "not-an-array",
+        });
+
+      expect(response.status).toBe(400);
+      expect(response.body.details).toHaveProperty("selectedCartItemIds");
+    });
+
+    it("should reject order creation when selectedCartItemIds is empty", async () => {
+      const response = await request(app)
+        .post("/orders")
+        .set("Authorization", `Bearer ${customerToken}`)
+        .send({
+          selectedCartItemIds: [],
+        });
+
+      expect(response.status).toBe(400);
+      expect(response.body.details).toHaveProperty("selectedCartItemIds");
+    });
+
+    it("should reject status update with invalid status", async () => {
+      const createResponse = await request(app)
+        .post("/orders")
+        .set("Authorization", `Bearer ${customerToken}`)
+        .send({
+          selectedCartItemIds: cartItemIds,
+        });
+
+      orderId = createResponse.body.order.id;
+
+      const response = await request(app)
+        .patch(`/orders/${orderId}/status`)
+        .set("Authorization", `Bearer ${adminToken}`)
+        .send({
+          status: "invalid_status",
+        });
+
+      expect(response.status).toBe(400);
+      expect(response.body.details).toHaveProperty("status");
+    });
+
+    it("should reject payment with invalid type", async () => {
+      const createResponse = await request(app)
+        .post("/orders")
+        .set("Authorization", `Bearer ${customerToken}`)
+        .send({
+          selectedCartItemIds: cartItemIds,
+        });
+
+      orderId = createResponse.body.order.id;
+
+      const response = await request(app)
+        .post(`/orders/${orderId}/payment`)
+        .set("Authorization", `Bearer ${customerToken}`)
+        .send({
+          type: "bitcoin",
+        });
+
+      expect(response.status).toBe(400);
+      expect(response.body.details).toHaveProperty("type");
+    });
+
+    it("should reject payment when type is missing", async () => {
+      const createResponse = await request(app)
+        .post("/orders")
+        .set("Authorization", `Bearer ${customerToken}`)
+        .send({
+          selectedCartItemIds: cartItemIds,
+        });
+
+      orderId = createResponse.body.order.id;
+
+      const response = await request(app)
+        .post(`/orders/${orderId}/payment`)
+        .set("Authorization", `Bearer ${customerToken}`)
+        .send({});
+
+      expect(response.status).toBe(400);
+      expect(response.body.details).toHaveProperty("type");
+    });
+  });
+
   describe("Delivery Flow", () => {
     it("should list available orders when user is delivery person", async () => {
       const response = await request(app)

@@ -2,6 +2,7 @@ import { Request, Response, NextFunction, Router } from "express";
 import { CategoryService } from "../services/CategoryService";
 import { UserRole } from "../models/UserModel";
 import { adminMiddleware } from "../middlewares/AuthMiddleware";
+import { CategoryValidator } from "../validators/CategoryValidator";
 
 const categoryService = new CategoryService();
 const router = Router();
@@ -9,6 +10,8 @@ const router = Router();
 export class CategoryController {
   async createCategory(req: Request, res: Response, next: NextFunction) {
     try {
+      CategoryValidator.createCategory(req.body);
+
       const currentUserRole = req.user?.role as UserRole;
       const data = req.body;
 
@@ -64,6 +67,8 @@ export class CategoryController {
 
   async updateCategory(req: Request, res: Response, next: NextFunction) {
     try {
+      CategoryValidator.updateCategory(req.body);
+
       const id = Number(req.params.id);
       const currentUserRole = req.user?.role as UserRole;
       const data = req.body;
@@ -100,6 +105,8 @@ export class CategoryController {
 
   async toggleCategoryStatus(req: Request, res: Response, next: NextFunction) {
     try {
+      CategoryValidator.toggleStatus(req.body);
+
       const id = Number(req.params.id);
       const currentUserRole = req.user?.role as UserRole;
       const { isActive } = req.body;

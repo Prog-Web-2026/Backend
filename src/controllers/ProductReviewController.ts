@@ -6,6 +6,7 @@ import {
   adminMiddleware,
   customerMiddleware,
 } from "../middlewares/AuthMiddleware";
+import { ReviewValidator } from "../validators/ReviewValidator";
 
 const productReviewService = new ProductReviewService();
 const fileUploadService = new FileUploadService();
@@ -14,6 +15,8 @@ const router = Router();
 export class ProductReviewController {
   async addReview(req: Request, res: Response, next: NextFunction) {
     try {
+      ReviewValidator.addReview(req.body);
+
       const productId = Number(req.params.productId);
       const userId = req.user!.id;
       const currentUserRole = req.user!.role;
@@ -86,6 +89,8 @@ export class ProductReviewController {
 
   async updateReview(req: Request, res: Response, next: NextFunction) {
     try {
+      ReviewValidator.updateReview(req.body);
+
       const reviewId = Number(req.params.id);
       const userId = req.user!.id;
       const currentUserRole = req.user!.role;
@@ -156,6 +161,8 @@ export class ProductReviewController {
 
   async reportReview(req: Request, res: Response, next: NextFunction) {
     try {
+      ReviewValidator.reportReview(req.body);
+
       const reviewId = Number(req.params.id);
       const userId = req.user!.id;
       const { details } = req.body;
@@ -187,6 +194,8 @@ export class ProductReviewController {
 
   async toggleReviewStatus(req: Request, res: Response, next: NextFunction) {
     try {
+      ReviewValidator.toggleStatus(req.body);
+
       const reviewId = Number(req.params.id);
       const currentUserRole = req.user!.role;
       const { isActive } = req.body;

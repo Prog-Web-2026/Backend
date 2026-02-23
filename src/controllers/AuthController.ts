@@ -3,6 +3,7 @@ import { AuthService } from "../services/AuthService";
 import { UserService } from "../services/UserService";
 import { UserRole } from "../models/UserModel";
 import { ValidationError, UnauthorizedError } from "../config/ErrorHandler";
+import { AuthValidator } from "../validators/AuthValidator";
 
 const authService = new AuthService();
 const userService = new UserService();
@@ -13,6 +14,8 @@ const protectedRouter = Router();
 export class AuthController {
   async register(req: Request, res: Response, next: NextFunction) {
     try {
+      AuthValidator.register(req.body);
+
       const {
         name,
         email,
@@ -21,16 +24,6 @@ export class AuthController {
         address,
         phone,
       } = req.body;
-
-      if (!name || !email || !password) {
-        throw new ValidationError("Nome, email e senha são obrigatórios");
-      }
-
-      if (role !== UserRole.CUSTOMER && role !== UserRole.DELIVERY) {
-        throw new ValidationError(
-          "Tipo de usuário inválido para registro público",
-        );
-      }
 
       const result = await userService.register({
         name,
@@ -60,11 +53,9 @@ export class AuthController {
 
   async login(req: Request, res: Response, next: NextFunction) {
     try {
-      const { email, password } = req.body;
+      AuthValidator.login(req.body);
 
-      if (!email || !password) {
-        throw new ValidationError("Email e senha são obrigatórios");
-      }
+      const { email, password } = req.body;
 
       const result = await userService.login(email, password);
 
@@ -107,11 +98,9 @@ export class AuthController {
 
   async registerDelivery(req: Request, res: Response, next: NextFunction) {
     try {
-      const { name, email, password, address, phone } = req.body;
+      AuthValidator.register(req.body);
 
-      if (!name || !email || !password) {
-        throw new ValidationError("Nome, email e senha são obrigatórios");
-      }
+      const { name, email, password, address, phone } = req.body;
 
       const result = await userService.register({
         name,
@@ -141,11 +130,9 @@ export class AuthController {
 
   async loginDelivery(req: Request, res: Response, next: NextFunction) {
     try {
-      const { email, password } = req.body;
+      AuthValidator.login(req.body);
 
-      if (!email || !password) {
-        throw new ValidationError("Email e senha são obrigatórios");
-      }
+      const { email, password } = req.body;
 
       const result = await userService.login(email, password);
 
@@ -166,12 +153,10 @@ export class AuthController {
 
   async changePassword(req: Request, res: Response, next: NextFunction) {
     try {
+      AuthValidator.changePassword(req.body);
+
       const userId = req.user?.id as number;
       const { currentPassword, newPassword } = req.body;
-
-      if (!currentPassword || !newPassword) {
-        throw new ValidationError("Senha atual e nova senha são obrigatórias");
-      }
 
       await userService.changePassword(userId, currentPassword, newPassword);
 
