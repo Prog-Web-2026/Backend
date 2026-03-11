@@ -14,6 +14,7 @@ import {
   ForbiddenError,
   ConflictError,
 } from "../config/ErrorHandler";
+import { calculateDistance, estimateTime } from "../utils/geo";
 
 export class OrderService {
   private orderRepository = new OrderRepository();
@@ -156,15 +157,22 @@ export class OrderService {
 
       return await this.orderRepository.findByUserId(userId, options);
     } else if (currentUserRole === UserRole.DELIVERY) {
+      const deliveryInclude = [
+        {
+          association: "customer",
+          attributes: ["id", "name", "email", "address", "phone"],
+        },
+        { association: "items", include: [{ association: "product" }] },
+        { association: "payment" },
+        {
+          association: "deliveryPerson",
+          attributes: ["id", "name", "email"],
+        },
+      ];
+
       const options: any = {
         where: { deliveryId: userId },
-        include: [
-          ...baseInclude,
-          {
-            association: "deliveryPerson",
-            attributes: ["id", "name", "email"],
-          },
-        ],
+        include: deliveryInclude,
         order: [["createdAt", "DESC"]],
       };
 
@@ -172,7 +180,34 @@ export class OrderService {
       if (filters?.limit) options.limit = filters.limit;
       if (filters?.offset) options.offset = filters.offset;
 
-      return await this.orderRepository.findByDeliveryId(userId, options);
+      const orders = await this.orderRepository.findByDeliveryId(
+        userId,
+        options,
+      );
+
+      const deliveryUser = await this.userRepository.findById(userId);
+      if (deliveryUser?.latitude != null && deliveryUser?.longitude != null) {
+        return orders.map((order) => {
+          const plain = order.toJSON() as any;
+          if (
+            order.deliveryLatitude != null &&
+            order.deliveryLongitude != null
+          ) {
+            plain.distance = parseFloat(
+              calculateDistance(
+                deliveryUser.latitude!,
+                deliveryUser.longitude!,
+                order.deliveryLatitude,
+                order.deliveryLongitude,
+              ).toFixed(1),
+            );
+            plain.estimatedTime = estimateTime(plain.distance);
+          }
+          return plain;
+        });
+      }
+
+      return orders;
     } else if (currentUserRole === UserRole.ADMIN) {
       const options: any = {
         include: [
@@ -195,14 +230,51 @@ export class OrderService {
     throw new ForbiddenError("Acesso negado");
   }
 
-  async getAvailableOrdersForDelivery(currentUserRole: UserRole) {
+  async getAvailableOrdersForDelivery(
+    deliveryUserId: number,
+    currentUserRole: UserRole,
+  ) {
     if (currentUserRole !== UserRole.DELIVERY) {
       throw new ForbiddenError(
         "Apenas entregadores podem ver pedidos disponíveis",
       );
     }
 
-    return await this.orderRepository.findOrdersReadyForDelivery();
+    const orders = await this.orderRepository.findOrdersReadyForDelivery();
+    const deliveryUser = await this.userRepository.findById(deliveryUserId);
+
+    const MAX_DISTANCE_KM = 20;
+
+    if (
+      deliveryUser?.latitude != null &&
+      deliveryUser?.longitude != null
+    ) {
+      const enriched = orders
+        .map((order) => {
+          const plain = order.toJSON() as any;
+          if (
+            order.deliveryLatitude != null &&
+            order.deliveryLongitude != null
+          ) {
+            plain.distance = parseFloat(
+              calculateDistance(
+                deliveryUser.latitude!,
+                deliveryUser.longitude!,
+                order.deliveryLatitude,
+                order.deliveryLongitude,
+              ).toFixed(1),
+            );
+            plain.estimatedTime = estimateTime(plain.distance);
+          }
+          return plain;
+        })
+        .filter((order) => order.distance == null || order.distance <= MAX_DISTANCE_KM)
+        .sort((a, b) => (a.distance ?? Infinity) - (b.distance ?? Infinity));
+
+      return enriched;
+    }
+
+    return orders;
   }
 
   async acceptOrderForDelivery(
@@ -230,6 +302,36 @@ export class OrderService {
 
     await this.orderRepository.update(orderId, {
       deliveryId,
+      status: OrderStatus.OUT_FOR_DELIVERY,
+    });
+
+    return await this.getOrderById(orderId, deliveryId, currentUserRole);
+  }
+
+  async confirmPickup(
+    orderId: number,
+    deliveryId: number,
+    currentUserRole: UserRole,
+  ) {
+    if (currentUserRole !== UserRole.DELIVERY) {
+      throw new ForbiddenError("Apenas entregadores podem confirmar coleta");
+    }
+
+    const order = await this.orderRepository.findById(orderId);
+
+    if (!order) {
+      throw new NotFoundError("Pedido não encontrado");
+    }
+
+    if (order.status !== OrderStatus.READY_FOR_PICKUP) {
+      throw new ConflictError("Pedido não está aguardando coleta");
+    }
+
+    if (order.deliveryId !== deliveryId) {
+      throw new ForbiddenError("Este pedido não está atribuído a você");
+    }
+
+    await this.orderRepository.update(orderId, {
       status: OrderStatus.OUT_FOR_DELIVERY,
     });
 
@@ -283,17 +385,16 @@ export class OrderService {
     isAssignedDelivery: boolean,
   ): OrderStatus[] {
     const adminTransitions: Record<OrderStatus, OrderStatus[]> = {
-      [OrderStatus.PENDING]: [OrderStatus.CONFIRMED, OrderStatus.CANCELLED],
+      [OrderStatus.PENDING]: [OrderStatus.CANCELLED],
       [OrderStatus.CONFIRMED]: [OrderStatus.PREPARING, OrderStatus.CANCELLED],
       [OrderStatus.PREPARING]: [
         OrderStatus.READY_FOR_PICKUP,
         OrderStatus.CANCELLED,
       ],
       [OrderStatus.READY_FOR_PICKUP]: [
-        OrderStatus.OUT_FOR_DELIVERY,
         OrderStatus.CANCELLED,
       ],
-      [OrderStatus.OUT_FOR_DELIVERY]: [OrderStatus.DELIVERED],
+      [OrderStatus.OUT_FOR_DELIVERY]: [],
       [OrderStatus.DELIVERED]: [],
       [OrderStatus.CANCELLED]: [],
     };
