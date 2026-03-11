@@ -92,11 +92,11 @@ describe("Rate Limiting E2E Tests", () => {
     });
   });
 
-  describe("General Rate Limit (10 requests per window)", () => {
-    it("should return 429 when requests to a public route exceed 10 per window", async () => {
+  describe("General Rate Limit (100 requests per window)", () => {
+    it("should return 429 when requests to a public route exceed 100 per window", async () => {
       const rateLimitedApp = createAppWithRateLimiting();
 
-      for (let i = 0; i < 10; i++) {
+      for (let i = 0; i < 100; i++) {
         const res = await request(rateLimitedApp).get("/products");
         expect(res.status).not.toBe(429);
       }
@@ -107,11 +107,11 @@ describe("Rate Limiting E2E Tests", () => {
       expect(blockedResponse.body.message).toContain("Too many requests");
     });
 
-    it("should return 429 when requests to a protected route exceed 10 per window", async () => {
+    it("should return 429 when requests to a protected route exceed 100 per window", async () => {
       const rateLimitedApp = createAppWithRateLimiting();
       const token = await global.getAuthToken(global.testCustomer);
 
-      for (let i = 0; i < 10; i++) {
+      for (let i = 0; i < 100; i++) {
         const res = await request(rateLimitedApp)
           .get("/auth/check")
           .set("Authorization", `Bearer ${token}`);

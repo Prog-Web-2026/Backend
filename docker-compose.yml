@@ -10,6 +10,7 @@ services:
         condition: service_healthy
     restart: always
     volumes:
+      - ./src:/usr/src/app/src
       - /usr/src/app/node_modules
 
   postgres:

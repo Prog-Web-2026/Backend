@@ -245,23 +245,22 @@ export class AuthController {
         throw new ValidationError("Token não fornecido");
       }
 
-      const payload = authService.verifyToken(token);
+      const payload = authService.decodeToken(token);
+
+      if (!payload) {
+        throw new ValidationError("Token inválido");
+      }
 
       const newToken = authService.generateToken({
-        id: payload!.id,
-        email: payload!.email,
-        role: payload!.role,
+        id: payload.id,
+        email: payload.email,
+        role: payload.role,
       });
 
       return res.status(200).json({
         token: newToken,
       });
     } catch (error) {
-      if (error instanceof UnauthorizedError) {
-        return res.status(401).json({
-          message: "Token expirado, faça login novamente",
-        });
-      }
       next(error);
     }
   }
@@ -286,7 +285,7 @@ protectedRouter.post(
 );
 protectedRouter.get("/check", controller.checkAuth.bind(controller));
 protectedRouter.get("/role", controller.checkRole.bind(controller));
-protectedRouter.post("/refresh", controller.refreshToken.bind(controller));
+publicRouter.post("/refresh", controller.refreshToken.bind(controller));
 
 export { publicRouter as AuthPublicRouter };
 export { protectedRouter as AuthProtectedRouter };

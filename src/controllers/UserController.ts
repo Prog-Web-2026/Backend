@@ -129,6 +129,11 @@ export class UserController {
 const controller = new UserController();
 
 router.get("/", adminMiddleware, controller.getAllUsers.bind(controller));
+
+// /me routes MUST come before /:id to avoid "me" being captured as an id
+router.put("/me/address", controller.updateUserAddress.bind(controller));
+router.put("/me/password", controller.changePassword.bind(controller));
+
 router.get("/:id", controller.getUserById.bind(controller));
 router.put("/:id", controller.updateUser.bind(controller));
 router.delete("/:id", controller.deleteUser.bind(controller));
@@ -137,12 +142,5 @@ router.patch(
   adminMiddleware,
   controller.toggleUserStatus.bind(controller)
 );
-
-router.put(
-  "/me/address",
-  customerMiddleware,
-  controller.updateUserAddress.bind(controller)
-);
-router.put("/me/password", controller.changePassword.bind(controller));
 
 export { router as UserRouter };

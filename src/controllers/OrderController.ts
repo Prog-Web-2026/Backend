@@ -168,16 +168,40 @@ export class OrderController {
     }
   }
 
+  async confirmPickup(req: Request, res: Response, next: NextFunction) {
+    try {
+      const orderId = Number(req.params.id);
+      const deliveryId = req.user?.id as number;
+      const currentUserRole = req.user?.role as UserRole;
+
+      const order = await orderService.confirmPickup(
+        orderId,
+        deliveryId,
+        currentUserRole,
+      );
+
+      res.status(200).json({
+        message: "Coleta confirmada",
+        order,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
   async getAvailableOrdersForDelivery(
     req: Request,
     res: Response,
     next: NextFunction,
   ) {
     try {
+      const userId = req.user?.id as number;
       const currentUserRole = req.user?.role as UserRole;
 
-      const orders =
-        await orderService.getAvailableOrdersForDelivery(currentUserRole);
+      const orders = await orderService.getAvailableOrdersForDelivery(
+        userId,
+        currentUserRole,
+      );
 
       res.status(200).json({ orders });
     } catch (error) {
@@ -270,6 +294,12 @@ router.post(
 );
 
 router.patch(
+  "/delivery/:id/pickup",
+  deliveryMiddleware,
+  controller.confirmPickup.bind(controller),
+);
+
+router.patch(
   "/delivery/:id/delivered",
   deliveryMiddleware,
   controller.markOrderAsDelivered.bind(controller),
@@ -282,11 +312,7 @@ router.get(
 );
 
 // Rotas de admin
-router.get(
-  "/stats",
-  adminMiddleware,
-  controller.getOrderStatistics.bind(controller),
-);
+router.get("/stats", controller.getOrderStatistics.bind(controller));
 
 router.patch(
   "/:id/status",

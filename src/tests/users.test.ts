@@ -202,16 +202,24 @@ describe("User Controller E2E Tests", () => {
       expect(response.body.user.address.city).toBe("São Paulo");
     });
 
-    it("should return 403 when delivery person tries to update address", async () => {
+    it("should allow delivery person to update address", async () => {
       const response = await request(app)
         .put("/users/me/address")
         .set(
           "Authorization",
           `Bearer ${await getAuthToken(global.testDelivery)}`,
         )
-        .send({ street: "Rua Teste" });
+        .send({
+          street: "Rua do Entregador",
+          number: "50",
+          neighborhood: "Centro",
+          city: "São Paulo",
+          state: "SP",
+          zipCode: "01001000",
+        });
 
-      expect(response.status).toBe(403);
+      expect(response.status).toBe(200);
+      expect(response.body.user.address.street).toBe("Rua do Entregador");
     });
 
     it("should return 400 when address is incomplete", async () => {

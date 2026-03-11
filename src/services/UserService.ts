@@ -123,8 +123,8 @@ export class UserService {
     address: UserAddress,
     currentUserRole: UserRole
   ) {
-    if (!this.authService.isCustomer(currentUserRole)) {
-      throw new ForbiddenError("Apenas clientes podem atualizar endereço");
+    if (!this.authService.isCustomer(currentUserRole) && !this.authService.isDelivery(currentUserRole)) {
+      throw new ForbiddenError("Apenas clientes e entregadores podem atualizar endereço");
     }
 
     const fullAddress = `${address.street}, ${address.number} - ${address.neighborhood}, ${address.city} - ${address.state}`;
@@ -139,6 +139,8 @@ export class UserService {
 
     const affectedCount = await this.userRepository.update(userId, {
       address: updatedAddress,
+      latitude: coordinates.latitude,
+      longitude: coordinates.longitude,
     });
 
     if (affectedCount === 0) {
