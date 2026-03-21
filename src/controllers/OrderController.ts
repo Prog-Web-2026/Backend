@@ -234,7 +234,7 @@ export class OrderController {
     }
   }
 
-  async markOrderAsDelivered(req: Request, res: Response, next: NextFunction) {
+  async confirmDelivery(req: Request, res: Response, next: NextFunction) {
     try {
       const orderId = Number(req.params.id);
       const userId = req.user?.id as number;
@@ -248,7 +248,7 @@ export class OrderController {
       );
 
       res.status(200).json({
-        message: "Pedido marcado como entregue",
+        message: "Recebimento confirmado com sucesso",
         order,
       });
     } catch (error) {
@@ -280,6 +280,12 @@ router.patch(
   controller.cancelOrder.bind(controller),
 );
 
+router.patch(
+  "/:id/confirm-delivery",
+  customerMiddleware,
+  controller.confirmDelivery.bind(controller),
+);
+
 // Rotas de entregador
 router.get(
   "/delivery/available",
@@ -297,12 +303,6 @@ router.patch(
   "/delivery/:id/pickup",
   deliveryMiddleware,
   controller.confirmPickup.bind(controller),
-);
-
-router.patch(
-  "/delivery/:id/delivered",
-  deliveryMiddleware,
-  controller.markOrderAsDelivered.bind(controller),
 );
 
 router.get(

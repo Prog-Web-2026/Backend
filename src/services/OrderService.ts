@@ -402,11 +402,11 @@ export class OrderService {
     if (userRole === UserRole.ADMIN) {
       return adminTransitions[currentStatus];
     } else if (userRole === UserRole.DELIVERY && isAssignedDelivery) {
+      return [];
+    } else if (userRole === UserRole.CUSTOMER) {
       if (currentStatus === OrderStatus.OUT_FOR_DELIVERY) {
         return [OrderStatus.DELIVERED];
       }
-      return [];
-    } else if (userRole === UserRole.CUSTOMER) {
       if (
         currentStatus === OrderStatus.PENDING ||
         currentStatus === OrderStatus.CONFIRMED

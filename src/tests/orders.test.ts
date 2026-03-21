@@ -514,7 +514,7 @@ describe("Order Controller E2E Tests", () => {
       expect(acceptResponse.body.order.deliveryId).toBe(global.testDelivery.id);
     });
 
-    it("should mark order as delivered when delivery person confirms", async () => {
+    it("should mark order as delivered when customer confirms delivery", async () => {
       const createResponse = await request(app)
         .post("/orders")
         .set("Authorization", `Bearer ${customerToken}`)
@@ -544,8 +544,8 @@ describe("Order Controller E2E Tests", () => {
         .set("Authorization", `Bearer ${deliveryToken}`);
 
       const deliveredResponse = await request(app)
-        .patch(`/orders/delivery/${orderId}/delivered`)
-        .set("Authorization", `Bearer ${deliveryToken}`);
+        .patch(`/orders/${orderId}/confirm-delivery`)
+        .set("Authorization", `Bearer ${customerToken}`);
 
       expect(deliveredResponse.status).toBe(200);
       expect(deliveredResponse.body.order.status).toBe("delivered");
